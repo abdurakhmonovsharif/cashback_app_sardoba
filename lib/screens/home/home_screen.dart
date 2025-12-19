@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../app_language.dart';
 import '../../app_localizations.dart';
@@ -22,6 +21,7 @@ import '../catalog/catalog_screen.dart';
 import '../catalog/product_details_screen.dart';
 import '../cashback/cashback_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../qr/qr_screen.dart';
 
 const AssetImage _kCheesecakeBannerImage =
     AssetImage('assets/images/cheesecake_banner.jpg');
@@ -351,14 +351,9 @@ class _CheesecakePromoBannerState extends State<_CheesecakePromoBanner> {
     }
   }
 
-  void _showQrSheet(BuildContext context) {
-    final code = 'SARD-CHEESE-${DateTime.now().millisecondsSinceEpoch}';
-    showModalBottomSheet<void>(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      builder: (context) => _CheesecakeQrSheet(code: code),
+  void _openQrScreen() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const QrScreen()),
     );
   }
 
@@ -410,7 +405,7 @@ class _CheesecakePromoBannerState extends State<_CheesecakePromoBanner> {
   @override
   Widget build(BuildContext context) {
     if (_news == null) {
-      return _StaticCheesecakeBanner(onCta: () => _showQrSheet(context));
+      return _StaticCheesecakeBanner(onCta: _openQrScreen);
     }
     return _NewsBanner(
       news: _news!,
@@ -630,87 +625,6 @@ class _NewsBanner extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _CheesecakeQrSheet extends StatelessWidget {
-  const _CheesecakeQrSheet({required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 18, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 42,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 18),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Text(
-            l10n.cheesecakeSheetTitle,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: titleColor,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 14),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: const Color(0xFFE6E8F0),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 28,
-                  offset: const Offset(0, 14),
-                ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: QrImageView(
-                data: code,
-                size: 220,
-                backgroundColor: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          SelectableText(
-            code,
-            style: theme.textTheme.titleSmall?.copyWith(
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w700,
-              color: primaryColor,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            l10n.cheesecakeSheetDescription,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF5B6375),
-              height: 1.4,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1286,15 +1200,38 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
   }
 
   String _formatCurrency(double value, bool isRu) {
-    final formatted = _formatPoints(value);
+    final formatted = _formatAmount(value, isRu: isRu);
     final suffix = isRu ? 'сум' : 'soʻm';
     return '$formatted $suffix';
   }
 
-  String _formatPoints(double value) {
-    final text =
-        value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
-    final reversed = text.split('').reversed.toList();
+  String _formatAmount(double value, {required bool isRu}) {
+    if (value.isNaN || value.isInfinite) return '0';
+    final isNegative = value < 0;
+    final absValue = value.abs();
+
+    final isWhole = absValue == absValue.truncateToDouble();
+    final raw = isWhole ? absValue.toStringAsFixed(0) : absValue.toStringAsFixed(1);
+
+    final parts = raw.split('.');
+    final intPart = parts.first;
+    final formattedInt = _groupDigits(intPart);
+
+    if (parts.length == 1) {
+      return isNegative ? '-$formattedInt' : formattedInt;
+    }
+
+    final fractional = parts[1].replaceFirst(RegExp(r'0+$'), '');
+    if (fractional.isEmpty) {
+      return isNegative ? '-$formattedInt' : formattedInt;
+    }
+    final decimalSeparator = isRu ? ',' : '.';
+    final formatted = '$formattedInt$decimalSeparator$fractional';
+    return isNegative ? '-$formatted' : formatted;
+  }
+
+  String _groupDigits(String digits) {
+    final reversed = digits.split('').reversed.toList();
     final buffer = StringBuffer();
     for (var i = 0; i < reversed.length; i++) {
       if (i != 0 && i % 3 == 0) buffer.write(' ');
@@ -1307,7 +1244,6 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isRu = l10n.locale == AppLocale.ru;
-    final loyalty = _account?.loyalty;
     final balanceValue = _account?.cashbackBalance;
     final balanceLabel = _isLoading
         ? '-'
@@ -1316,39 +1252,15 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
             : '-';
     final helper = _account == null
         ? l10n.cashbackLoginRequired
-        : loyalty == null
-            ? l10n.cashbackHelper
-            : loyalty.isMaxLevel
-                ? l10n.loyaltyMaxLevelHelper
-                : (loyalty.nextLevel?.isNotEmpty == true &&
-                        loyalty.pointsToNext != null)
-                    ? l10n.loyaltyPointsToNextHelper(
-                        _formatPoints(loyalty.pointsToNext ?? 0),
-                        loyalty.nextLevel ?? '',
-                      )
-                    : l10n.cashbackHelper;
-
-    final tierTitle = loyalty?.level?.isNotEmpty == true
-        ? loyalty!.level!
-        : l10n.membershipTitle;
-    final tierNote = loyalty == null
-        ? l10n.membershipHelper
-        : loyalty.isMaxLevel
-            ? l10n.loyaltyMaxLevelHelper
-            : l10n.loyaltyNextLevelLabel(loyalty.nextLevel ?? '');
-    final currentLabel = loyalty == null
-        ? l10n.membershipHelper
-        : l10n.loyaltyProgressLabel(
-            _formatPoints(loyalty.currentLevelPoints ?? 0),
-            _formatPoints(loyalty.currentLevelMax ?? 0),
-          );
+        : l10n.cashbackHelper;
     return CombinedCardWidget(
       balanceLabel: l10n.cashbackTitle,
       balanceValue: balanceLabel,
       balanceNote: helper,
-      tierTitle: tierTitle,
-      tierNote: tierNote,
-      currentPointsText: currentLabel,
+      tierTitle: '',
+      tierNote: '',
+      showTier: false,
+      currentPointsText: null,
       onTap: _account == null ? null : () => _openCashback(_account!),
     );
   }

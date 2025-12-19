@@ -166,10 +166,13 @@ class _ProfileBodyState extends State<_ProfileBody> {
     );
     if (source == null) return null;
 
-    final granted = source == ImageSource.camera
-        ? await _handleCameraPermission()
-        : await _handleGalleryPermission();
-    if (!mounted || !granted) return null;
+    // On iOS, the system prompt is handled by image_picker itself.
+    if (!Platform.isIOS) {
+      final granted = source == ImageSource.camera
+          ? await _handleCameraPermission()
+          : await _handleGalleryPermission();
+      if (!mounted || !granted) return null;
+    }
     return source;
   }
 
@@ -505,36 +508,6 @@ class _ProfileHeader extends StatelessWidget {
                     ),
                   ),
                 ],
-                if ((account?.loyalty?.level ?? account?.level)?.isNotEmpty ==
-                    true) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4D8),
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star_rounded,
-                            size: 16, color: Color(0xFFDE9C37)),
-                        const SizedBox(width: 6),
-                        Text(
-                          l10n.profileTierBadge(
-                            account?.loyalty?.level ?? account?.level ?? '',
-                          ),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF9A6C1E),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -577,68 +550,66 @@ class _LoyaltyHighlight extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isRu = l10n.locale == AppLocale.ru;
-    final loyalty = account?.loyalty;
     final balanceValue = account?.cashbackBalance;
     final balanceLabel =
         balanceValue != null ? _formatCurrency(balanceValue, isRu) : '—';
     final helper = account == null
         ? l10n.cashbackLoginRequired
-        : loyalty == null
-            ? l10n.cashbackHelper
-            : loyalty.isMaxLevel
-                ? l10n.loyaltyMaxLevelHelper
-                : (loyalty.nextLevel?.isNotEmpty == true &&
-                        loyalty.pointsToNext != null)
-                    ? l10n.loyaltyPointsToNextHelper(
-                        _formatPoints(loyalty.pointsToNext ?? 0),
-                        loyalty.nextLevel ?? '',
-                      )
-                    : l10n.cashbackHelper;
-    final tierTitle = loyalty?.level?.isNotEmpty == true
-        ? loyalty!.level!
-        : l10n.membershipTitle;
-    final tierNote = loyalty == null
-        ? l10n.membershipHelper
-        : loyalty.isMaxLevel
-            ? l10n.loyaltyMaxLevelHelper
-            : l10n.loyaltyNextLevelLabel(loyalty.nextLevel ?? '');
-    final currentLabel = loyalty == null
-        ? l10n.membershipHelper
-        : l10n.loyaltyProgressLabel(
-            _formatPoints(loyalty.currentLevelPoints ?? 0),
-            _formatPoints(loyalty.currentLevelMax ?? 0),
-          );
+        : l10n.cashbackHelper;
 
     return CombinedCardWidget(
       balanceLabel: l10n.cashbackTitle,
       balanceValue: balanceLabel,
       balanceNote: helper,
-      tierTitle: tierTitle,
-      tierNote: tierNote,
-      currentPointsText: currentLabel,
+      tierTitle: '',
+      tierNote: '',
+      showTier: false,
+      currentPointsText: null,
       onTap: onCashbackTap,
     );
   }
 
   String _formatCurrency(double value, bool isRu) {
-    final formatted = _formatPoints(value);
+    final formatted = _formatAmount(value, isRu: isRu);
     final suffix = isRu ? 'сум' : 'soʻm';
     return '$formatted $suffix';
   }
 
-  String _formatPoints(double value) {
-    final text =
-        value % 1 == 0 ? value.toInt().toString() : value.toStringAsFixed(1);
-    final reversed = text.split('').reversed;
-    final buffer = StringBuffer();
-    var count = 0;
-    for (final char in reversed) {
-      if (count != 0 && count % 3 == 0) buffer.write(' ');
-      buffer.write(char);
-      count++;
+  String _formatAmount(double value, {required bool isRu}) {
+    if (value.isNaN || value.isInfinite) return '0';
+    final isNegative = value < 0;
+    final absValue = value.abs();
+
+    final isWhole = absValue == absValue.truncateToDouble();
+    final raw =
+        isWhole ? absValue.toStringAsFixed(0) : absValue.toStringAsFixed(1);
+
+    final parts = raw.split('.');
+    final intPart = parts.first;
+    final formattedInt = _groupDigits(intPart);
+
+    if (parts.length == 1) {
+      return isNegative ? '-$formattedInt' : formattedInt;
     }
-    final formatted = buffer.toString().split('').reversed.join();
-    return formatted;
+
+    final fractional = parts[1].replaceFirst(RegExp(r'0+$'), '');
+    if (fractional.isEmpty) {
+      return isNegative ? '-$formattedInt' : formattedInt;
+    }
+
+    final decimalSeparator = isRu ? ',' : '.';
+    final formatted = '$formattedInt$decimalSeparator$fractional';
+    return isNegative ? '-$formatted' : formatted;
+  }
+
+  String _groupDigits(String digits) {
+    final reversed = digits.split('').reversed.toList();
+    final buffer = StringBuffer();
+    for (var i = 0; i < reversed.length; i++) {
+      if (i != 0 && i % 3 == 0) buffer.write(' ');
+      buffer.write(reversed[i]);
+    }
+    return buffer.toString().split('').reversed.join();
   }
 }
 

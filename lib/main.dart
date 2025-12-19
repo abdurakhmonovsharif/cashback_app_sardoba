@@ -21,6 +21,7 @@ Future<void> main() async {
   await _loadEnv();
   await AuthStorage.instance.ensureInitialized();
   await PushNotificationManager.instance.init();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
   runApp(const MyApp());
 

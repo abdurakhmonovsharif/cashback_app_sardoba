@@ -9,6 +9,7 @@ class CombinedCardWidget extends StatelessWidget {
     required this.balanceNote,
     required this.tierTitle,
     required this.tierNote,
+    this.showTier = true,
     this.currentPointsText,
     this.onTap,
   });
@@ -18,6 +19,7 @@ class CombinedCardWidget extends StatelessWidget {
   final String balanceNote;
   final String tierTitle;
   final String tierNote;
+  final bool showTier;
   final String? currentPointsText;
   final VoidCallback? onTap;
 
@@ -59,17 +61,21 @@ class CombinedCardWidget extends StatelessWidget {
             theme: theme,
           );
 
-          if (isCompact) {
+          if (isCompact || !showTier) {
             return Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 balanceSection,
-                const SizedBox(height: 18),
-                tierSection,
+                if (showTier) ...[
+                  const SizedBox(height: 18),
+                  tierSection,
+                ],
               ],
             );
           }
+
+          if (!showTier) return balanceSection;
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,

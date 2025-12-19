@@ -16,7 +16,7 @@ class NotificationService {
             dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
-  static const String _notificationsPath = '/api/v1/notifications';
+  static const String _notificationsPath = '/api/v1/notifications/me';
 
   final Dio _dio;
   final bool _ownsDio;

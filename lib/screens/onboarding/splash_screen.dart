@@ -54,22 +54,34 @@ class _SplashScreenState extends State<SplashScreen>
               color: Colors.black.withValues(alpha: 0.25),
             ),
           ),
-          const Positioned(
-            bottom: 64,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: SizedBox(
-                height: 28,
-                width: 28,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                ),
-              ),
-            ),
-          ),
+          const _BottomProgress(),
         ],
+      ),
+    );
+  }
+}
+
+class _BottomProgress extends StatelessWidget {
+  const _BottomProgress();
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+    final progressBottom = 64 + (bottomInset > 0 ? bottomInset : 0);
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: progressBottom.toDouble(),
+      child: const Center(
+        child: SizedBox(
+          height: 28,
+          width: 28,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
+          ),
+        ),
       ),
     );
   }

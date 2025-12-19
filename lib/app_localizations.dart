@@ -122,7 +122,7 @@ class AppStrings {
       _isRu ? 'Ваш подарочный QR' : 'Sizning sovgʻa QR kodingiz';
   String get cheesecakeSheetDescription => _isRu
       ? 'Покажите QR на кассе чтобы получить десерт.'
-      : 'QRni kassada  ko‘rsating va desertni oling.';
+      : 'QRni kassaga ko‘rsating va desertni oling.';
   String get cashbackButtonCta => _isRu ? 'Подробнее' : 'Batafsil';
   String get cashbackScreenTitle => _isRu ? 'Кешбэк' : 'Keshbek';
   String get cashbackScreenDescription => _isRu
@@ -235,8 +235,8 @@ class AppStrings {
   String get profileInfoMenuTitle =>
       _isRu ? 'Данные профиля' : 'Profil maʼlumotlari';
   String get profileInfoMenuSubtitle => _isRu
-      ? 'Измените имя, дату рождения и фото'
-      : 'Ism, tugʻilgan sana va rasmingizni yangilang';
+      ? 'Измените имя, дату рождения'
+      : 'Ism, tugʻilgan sanangizni yangilang';
   String get profilePinMenuTitle =>
       _isRu ? 'Сменить PIN' : 'PIN kodni almashtirish';
   String get profilePinMenuSubtitle =>
@@ -386,7 +386,7 @@ class AppStrings {
   // QR
   String get qrScreenTitle => _isRu ? 'Мой QR-код' : 'Mening QR-kodim';
   String get qrScreenInstruction =>
-      _isRu ? 'Покажите этот код на кассе.' : 'Kassada ushbu kodni ko‘rsating.';
+      _isRu ? 'Покажите этот код на кассе.' : 'Ushbu kodni kassaga ko‘rsating.';
   String get qrScreenFooter => _isRu
       ? 'QR-код связывает ваш аккаунт и номер телефона для бонусов.'
       : 'QR-kod hisobingizni telefon raqamingiz bilan bog‘laydi va bonuslarni tezlashtiradi.';

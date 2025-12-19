@@ -57,7 +57,7 @@ class AuthService {
     required String code,
     String? name,
     required String purpose,
-    String? waiterReferralCode,
+    String? referralCode,
     DateTime? dateOfBirth,
   }) async {
     final normalizedPhone = _normalizePhone(phone);
@@ -72,8 +72,9 @@ class AuthService {
       payload['name'] = name.trim();
     }
 
-    if (waiterReferralCode != null && waiterReferralCode.trim().isNotEmpty) {
-      payload['waiter_referral_code'] = waiterReferralCode.trim();
+    if (referralCode != null && referralCode.trim().isNotEmpty) {
+      // Optional referral code for registration
+      payload['referral_code'] = referralCode.trim();
     }
     if (dateOfBirth != null) {
       payload['date_of_birth'] = _formatDate(dateOfBirth);
@@ -98,7 +99,7 @@ class AuthService {
       final tokenType = tokens.tokenType;
 
       Map<String, dynamic>? profile;
-      if (accessToken != null && accessToken.isNotEmpty) {
+      if (accessToken.isNotEmpty) {
         profile = await _fetchProfile(
           accessToken: accessToken,
           tokenType: tokenType,

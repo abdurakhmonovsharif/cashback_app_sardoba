@@ -1,4 +1,4 @@
-package com.example.ios
+package com.sardoba.app
 
 import io.flutter.embedding.android.FlutterActivity
 

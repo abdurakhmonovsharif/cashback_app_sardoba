@@ -113,17 +113,18 @@ class FloatingNavBar extends StatelessWidget {
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.35), // ✅ updated
+                    // Glassmorphism background for nav bar.
+                    color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(36),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: Colors.white.withValues(alpha: 0.35),
                       width: 1,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
+                        color: Colors.black.withValues(alpha: 0.07),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -191,7 +192,7 @@ class _NavItem extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color:
-                isActive ? primaryColor : Colors.white.withValues(alpha: 0.35),
+                isActive ? primaryColor : Colors.white.withValues(alpha: 0.25),
             boxShadow: isActive
                 ? [
                     BoxShadow(

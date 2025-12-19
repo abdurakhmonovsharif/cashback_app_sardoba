@@ -59,6 +59,8 @@ ios/build/
 # Android
 android/.gradle/
 android/local.properties
+android/key.properties
+android/app/upload-keystore.jks
 
 # macOS / Windows
 macos/Flutter/ephemeral/

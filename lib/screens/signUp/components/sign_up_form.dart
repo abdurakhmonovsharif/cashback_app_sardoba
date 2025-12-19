@@ -198,7 +198,7 @@ class _SignUpFormState extends State<SignUpForm>
                 code: code,
                 name: name,
                 purpose: 'register',
-                waiterReferralCode: referral,
+                referralCode: referral,
                 dateOfBirth: _selectedDob,
               );
               await storage.upsertAccount(
