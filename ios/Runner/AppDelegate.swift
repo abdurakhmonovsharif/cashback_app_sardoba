@@ -63,14 +63,13 @@
         // MARK: - Yandex Map config
 
         private func configureYandexMapKit() {
-            let apiKey =
-                envValue(for: "YANDEX_MAPKIT_API_KEY")
-                ?? Bundle.main.object(forInfoDictionaryKey: "YANDEX_MAPKIT_API_KEY") as? String
+            let apiKey = "2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40"
 
-            if let key = apiKey, !key.isEmpty {
+            if !apiKey.isEmpty {
                 YMKMapKit.setLocale("ru_RU")
-                YMKMapKit.setApiKey(key)
+                YMKMapKit.setApiKey(apiKey)
             }
+
         }
 
         private func envValue(for key: String) -> String? {

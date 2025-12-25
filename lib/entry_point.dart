@@ -97,11 +97,12 @@ class FloatingNavBar extends StatelessWidget {
     required this.onQrPressed,
     super.key,
   });
-
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+    final double safeOffset = bottomInset > 0 ? bottomInset * 0.45 : 0;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + safeOffset),
       child: SizedBox(
         height: floatingNavBarHeight,
         child: Stack(

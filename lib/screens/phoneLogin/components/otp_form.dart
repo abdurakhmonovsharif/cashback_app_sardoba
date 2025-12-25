@@ -34,12 +34,12 @@ class _OtpFormState extends State<OtpForm> {
     super.initState();
     _nodes = List.generate(4, (_) => FocusNode());
     _controllers = List.generate(4, (_) => TextEditingController());
-    RawKeyboard.instance.addListener(_handleKeyEvent);
+    HardwareKeyboard.instance.addHandler(_handleKeyEvent);
   }
 
   @override
   void dispose() {
-    RawKeyboard.instance.removeListener(_handleKeyEvent);
+    HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
     for (final node in _nodes) {
       node.dispose();
     }
@@ -81,28 +81,28 @@ class _OtpFormState extends State<OtpForm> {
     }
   }
 
-  void _handleKeyEvent(RawKeyEvent event) {
-    if (event is! RawKeyDownEvent ||
+  bool _handleKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent ||
         event.logicalKey != LogicalKeyboardKey.backspace) {
-      return;
+      return false;
     }
     final FocusNode? currentFocus = FocusManager.instance.primaryFocus;
-    if (currentFocus == null) return;
+    if (currentFocus == null) return false;
     final int currentIndex =
         _nodes.indexWhere((FocusNode node) => identical(node, currentFocus));
-    if (currentIndex <= 0) return;
+    if (currentIndex <= 0) return false;
     final controller = _controllers[currentIndex];
-    if (controller.text.isNotEmpty) return;
+    if (controller.text.isNotEmpty) return false;
     final prevNode = _nodes[currentIndex - 1];
     final prevController = _controllers[currentIndex - 1];
     prevNode.requestFocus();
     prevController.selection =
         TextSelection.collapsed(offset: prevController.text.length);
+    return false;
   }
 
   Widget _buildDigitField(int index) {
     final node = _nodes[index];
-    final FocusNode? prevNode = index > 0 ? _nodes[index - 1] : null;
     final FocusNode? nextNode = index < _nodes.length - 1 ? _nodes[index + 1] : null;
     final controller = _controllers[index];
 

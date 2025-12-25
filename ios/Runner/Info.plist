@@ -83,7 +83,5 @@
 	<false/>
 	<key>UNUserNotificationCenter</key>
 	<true/>
-	<key>YANDEX_MAPKIT_API_KEY</key>
-	<string></string>
 </dict>
 </plist>

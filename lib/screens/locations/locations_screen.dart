@@ -32,6 +32,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
   bool _hasPromptedForLocation = false;
   bool _isRequestingLocation = false;
   bool _disposed = false;
+  bool _locationGranted = false;
 
   @override
   void initState() {
@@ -90,11 +91,13 @@ class _LocationsScreenState extends State<LocationsScreen> {
         .timeout(const Duration(milliseconds: 150));
     if (permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse) {
+      _setLocationGranted(true);
       await _useCurrentLocation();
       return;
     }
 
     if (permission == LocationPermission.deniedForever) {
+      _setLocationGranted(false);
       _hasPromptedForLocation = true;
       if (!mounted) return;
       _showLocationSnack(
@@ -103,9 +106,15 @@ class _LocationsScreenState extends State<LocationsScreen> {
       return;
     }
 
+    _setLocationGranted(false);
+
     if (_hasPromptedForLocation) return;
     _hasPromptedForLocation = true;
 
+    await _promptForLocationAccess();
+  }
+
+  Future<void> _promptForLocationAccess() async {
     if (!mounted) return;
     final strings = AppLocalizations.of(context);
     final allowAccess = await showModalBottomSheet<bool>(
@@ -129,17 +138,19 @@ class _LocationsScreenState extends State<LocationsScreen> {
 
     if (permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse) {
+      _setLocationGranted(true);
       await _useCurrentLocation();
       return;
     }
 
+    _setLocationGranted(false);
     _showLocationSnack(
       AppLocalizations.of(context).locationPermissionDeniedMessage,
     );
   }
 
   Future<void> _useCurrentLocation() async {
-    if (!mounted || _isRequestingLocation) return;
+    if (!mounted || _isRequestingLocation || !_locationGranted) return;
     _isRequestingLocation = true;
     try {
       final strings = AppLocalizations.of(context);
@@ -152,6 +163,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
       final permission = await Geolocator.checkPermission();
       if (permission != LocationPermission.always &&
           permission != LocationPermission.whileInUse) {
+        _setLocationGranted(false);
         return;
       }
       final position = await Geolocator.getCurrentPosition(
@@ -171,6 +183,14 @@ class _LocationsScreenState extends State<LocationsScreen> {
     } finally {
       _isRequestingLocation = false;
     }
+  }
+
+  void _setLocationGranted(bool value) {
+    if (_locationGranted == value) return;
+    if (!mounted) return;
+    setState(() {
+      _locationGranted = value;
+    });
   }
 
   Branch? _nearestBranchTo(Point userPoint) {
@@ -307,12 +327,20 @@ class _LocationsScreenState extends State<LocationsScreen> {
               const SizedBox(height: 20),
               SizedBox(
                 height: 180,
-                child: _MapContainer(
-                  mapObjects: _mapObjects,
-                  onMapCreated: (c) => Future.microtask(() => _onMapCreated(c)),
-                  onZoomIn: () => _zoomBy(1.0),
-                  onZoomOut: () => _zoomBy(-1.0),
-                ),
+                child: _locationGranted
+                    ? _MapContainer(
+                        mapObjects: _mapObjects,
+                        onMapCreated: (c) =>
+                            Future.microtask(() => _onMapCreated(c)),
+                        onZoomIn: () => _zoomBy(1.0),
+                        onZoomOut: () => _zoomBy(-1.0),
+                      )
+                    : _LocationPlaceholder(
+                        onAllow: () async {
+                          _hasPromptedForLocation = true;
+                          await _promptForLocationAccess();
+                        },
+                      ),
               ),
               const SizedBox(height: 24),
               Text(
@@ -423,6 +451,71 @@ class _MapContainer extends StatelessWidget {
         ),
       ),
     ));
+  }
+}
+
+class _LocationPlaceholder extends StatelessWidget {
+  const _LocationPlaceholder({required this.onAllow});
+
+  final VoidCallback onAllow;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
+
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 24,
+              offset: const Offset(0, 18),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.locationPermissionTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: titleColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.locationPermissionDescription,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: bodyTextColor,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 46,
+              child: ElevatedButton(
+                onPressed: onAllow,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(l10n.locationPermissionAllow),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

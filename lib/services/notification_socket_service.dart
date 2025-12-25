@@ -265,7 +265,7 @@ class NotificationSocketManager {
   }
 
   AppNotification _toAppNotification(Map<String, dynamic> payload) {
-    Map<String, dynamic>? _parsePayload(dynamic value) {
+    Map<String, dynamic>? parsePayload(dynamic value) {
       if (value is Map<String, dynamic>) return value;
       if (value is String && value.isNotEmpty) {
         try {
@@ -304,7 +304,7 @@ class NotificationSocketManager {
       createdAt: createdAt,
       type: type.isEmpty ? null : type,
       language: language.isEmpty ? null : language,
-      payload: _parsePayload(payload['payload']),
+      payload: parsePayload(payload['payload']),
       isSent: true,
     );
   }
