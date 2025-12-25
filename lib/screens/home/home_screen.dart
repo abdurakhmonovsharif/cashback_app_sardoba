@@ -17,6 +17,7 @@ import '../../services/branch_state.dart';
 import '../../services/catalog_repository.dart';
 import '../../services/news_service.dart';
 import '../../entry_point.dart';
+import '../../services/session_sync_service.dart';
 import '../catalog/catalog_screen.dart';
 import '../catalog/product_details_screen.dart';
 import '../cashback/cashback_screen.dart';
@@ -26,8 +27,21 @@ import '../qr/qr_screen.dart';
 const AssetImage _kCheesecakeBannerImage =
     AssetImage('assets/images/cheesecake_banner.jpg');
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Future<void> _refreshHome() async {
+    final account = await SessionSyncService.instance.sync();
+    if (account != null) {
+      // Emit the latest profile (including cashback) to listening widgets.
+      await AuthStorage.instance.updateCurrentAccount(account);
+    }
+  }
 
   InputDecoration _buildSearchDecoration(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -62,84 +76,91 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         top: true,
         bottom: false,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-            defaultPadding,
-            12,
-            defaultPadding,
-            scrollBottomPadding,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RepaintBoundary(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 0,
-                    vertical: 14,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const RepaintBoundary(child: _HomeHeader()),
-                      const SizedBox(height: 24),
-                      TextField(
-                        decoration: _buildSearchDecoration(context),
-                      ),
-                      const SizedBox(height: 18),
-                      const _CheesecakePromoBanner(),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                l10n.loyaltyTitle,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: titleColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 14),
-              RepaintBoundary(
-                child: const _LoyaltyStats(),
-              ),
-              const SizedBox(height: 24),
-              InkWell(
-                onTap: () {
-                  final handled = EntryPoint.selectTab(context, 1);
-                  if (!handled) {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const CatalogScreen(),
-                      ),
-                    );
-                  }
-                },
-                borderRadius: BorderRadius.circular(18),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        l10n.offersTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: titleColor,
-                          fontWeight: FontWeight.w700,
+        child: RefreshIndicator(
+          color: primaryColor,
+          onRefresh: _refreshHome,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              defaultPadding,
+              12,
+              defaultPadding,
+              scrollBottomPadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RepaintBoundary(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 0,
+                      vertical: 14,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const RepaintBoundary(child: _HomeHeader()),
+                        const SizedBox(height: 24),
+                        TextField(
+                          decoration: _buildSearchDecoration(context),
                         ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: titleColor,
-                      ),
-                    ],
+                        const SizedBox(height: 18),
+                        const _CheesecakePromoBanner(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              const _OffersCarousel(),
-            ],
+                const SizedBox(height: 24),
+                Text(
+                  l10n.loyaltyTitle,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: titleColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                RepaintBoundary(
+                  child: const _LoyaltyStats(),
+                ),
+                const SizedBox(height: 24),
+                InkWell(
+                  onTap: () {
+                    final handled = EntryPoint.selectTab(context, 1);
+                    if (!handled) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const CatalogScreen(),
+                        ),
+                      );
+                    }
+                  },
+                  borderRadius: BorderRadius.circular(18),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          l10n.offersTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: titleColor,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: titleColor,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const _OffersCarousel(),
+              ],
+            ),
           ),
         ),
       ),

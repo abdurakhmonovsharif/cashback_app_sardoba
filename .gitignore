@@ -65,3 +65,7 @@ android/app/upload-keystore.jks
 # macOS / Windows
 macos/Flutter/ephemeral/
 windows/flutter/ephemeral/
+
+# Android keystore files
+android/app/upload-keystore.jks
+android/key.properties

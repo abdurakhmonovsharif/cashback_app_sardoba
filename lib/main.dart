@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'app_language.dart';
 import 'app_localizations.dart';
@@ -18,10 +17,13 @@ import 'services/session_sync_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await _loadEnv();
   await AuthStorage.instance.ensureInitialized();
   await PushNotificationManager.instance.init();
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // Use edge-to-edge so status/navigation bars remain visible.
+  await SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.manual,
+    overlays: [SystemUiOverlay.top]
+  );
 
   runApp(const MyApp());
 
@@ -31,14 +33,6 @@ Future<void> main() async {
   Future.microtask(() async {
     await SessionSyncService.instance.sync();
   });
-}
-
-Future<void> _loadEnv() async {
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (error) {
-    debugPrint('⚠️ Failed to load .env file: $error');
-  }
 }
 
 /// ─────────────────────────────────────────

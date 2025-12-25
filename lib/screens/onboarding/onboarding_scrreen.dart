@@ -76,6 +76,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final viewPadding = MediaQuery.of(context).padding;
+    final bottomPadding = 28 + viewPadding.bottom + 20;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F1217),
@@ -110,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ),
           Positioned.fill(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(28, 80, 28, 28),
+              padding: EdgeInsets.fromLTRB(28, 80, 28, bottomPadding),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -186,10 +188,11 @@ class _SwipeToStartButtonState extends State<_SwipeToStartButton> {
         final trackWidth = constraints.maxWidth;
         const knobSize = 58.0;
         const sliderPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 0);
+        const endInset = 6.0; // prevent the knob from overshooting the pill edges
         final innerTrackWidth =
             (trackWidth - sliderPadding.horizontal).clamp(0.0, double.infinity);
         final maxOffset =
-            (innerTrackWidth - knobSize).clamp(0.0, double.infinity);
+            (innerTrackWidth - knobSize - endInset).clamp(0.0, double.infinity);
         final knobOffset = maxOffset * widget.progress.clamp(0.0, 1.0);
 
         return Container(

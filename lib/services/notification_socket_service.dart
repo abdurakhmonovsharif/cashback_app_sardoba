@@ -265,6 +265,19 @@ class NotificationSocketManager {
   }
 
   AppNotification _toAppNotification(Map<String, dynamic> payload) {
+    Map<String, dynamic>? _parsePayload(dynamic value) {
+      if (value is Map<String, dynamic>) return value;
+      if (value is String && value.isNotEmpty) {
+        try {
+          final decoded = jsonDecode(value);
+          if (decoded is Map<String, dynamic>) return decoded;
+        } catch (_) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     final idValue = payload['notification_id'] ??
         payload['id'] ??
         payload['notificationId'];
@@ -282,11 +295,17 @@ class NotificationSocketManager {
             payload['notification_description'] ??
             payload['message'])
         .toString();
+    final type = (payload['type'] ?? '').toString();
+    final language = (payload['language'] ?? '').toString();
     return AppNotification(
       id: id,
       title: title,
       description: description,
       createdAt: createdAt,
+      type: type.isEmpty ? null : type,
+      language: language.isEmpty ? null : language,
+      payload: _parsePayload(payload['payload']),
+      isSent: true,
     );
   }
 

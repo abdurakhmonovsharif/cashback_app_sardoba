@@ -16,27 +16,40 @@ class NotificationService {
             dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
-  static const String _notificationsPath = '/api/v1/notifications/me';
+  static const String _notificationsPath = '/api/v1/notifications/clients';
 
   final Dio _dio;
   final bool _ownsDio;
 
-  Future<List<AppNotification>> fetchNotifications() async {
+  Future<ClientNotificationsResponse> fetchNotifications({
+    int limit = 50,
+  }) async {
     try {
-      final response = await _performAuthenticatedRequest();
+      final safeLimit = limit.clamp(1, 200).toInt();
+      final response = await _performAuthenticatedRequest(
+        limit: safeLimit,
+      );
       dynamic payload = response.data;
       if (payload is String && payload.isNotEmpty) {
         payload = jsonDecode(payload);
       }
-      if (payload is! List) {
+      if (payload is! Map<String, dynamic>) {
         throw const NotificationServiceException(
           'Unexpected notifications payload.',
         );
       }
-      return payload
-          .whereType<Map<String, dynamic>>()
-          .map(AppNotification.fromJson)
-          .toList();
+
+      final items = (payload['items'] as List?)
+              ?.whereType<Map<String, dynamic>>()
+              .map(AppNotification.fromJson)
+              .toList() ??
+          <AppNotification>[];
+      final unreadCount = (payload['unread_count'] as num?)?.toInt() ?? 0;
+
+      return ClientNotificationsResponse(
+        items: items,
+        unreadCount: unreadCount,
+      );
     } on DioException catch (error) {
       final status = error.response?.statusCode;
       final message = status != null
@@ -50,7 +63,9 @@ class NotificationService {
     }
   }
 
-  Future<Response> _performAuthenticatedRequest() async {
+  Future<Response> _performAuthenticatedRequest({
+    required int limit,
+  }) async {
     final storage = AuthStorage.instance;
     final token = await storage.getAccessToken();
     if (token == null || token.isEmpty) {
@@ -60,6 +75,9 @@ class NotificationService {
     try {
       return await _dio.get(
         _notificationsPath,
+        queryParameters: {
+          'limit': limit,
+        },
         options: Options(
           headers: {'Authorization': '$scheme $token'},
         ),
@@ -82,6 +100,9 @@ class NotificationService {
         }
         return await _dio.get(
           _notificationsPath,
+          queryParameters: {
+            'limit': limit,
+          },
           options: Options(
             headers: {'Authorization': '$newScheme $newToken'},
           ),
@@ -112,6 +133,41 @@ class NotificationService {
       _dio.close(force: false);
     }
   }
+
+  Future<void> markAsRead({required int notificationId}) async {
+    final storage = AuthStorage.instance;
+    final token = await storage.getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw NotificationServiceException('Missing access token.');
+    }
+    final scheme = _normalizeScheme(await storage.getTokenType());
+    final path = '$_notificationsPath/$notificationId/read';
+    try {
+      await _dio.post(
+        path,
+        options: Options(headers: {'Authorization': '$scheme $token'}),
+      );
+    } on DioException catch (error) {
+      if (_isAuthError(error)) {
+        if (await AuthSessionGuard.instance.logoutIfTokensMissing()) {
+          throw NotificationServiceException('Session expired.');
+        }
+        final refreshed = await storage.refreshTokens();
+        if (!refreshed) {
+          await AppNavigator.forceLogout();
+          throw NotificationServiceException('Session expired.');
+        }
+        final newToken = await storage.getAccessToken();
+        final newScheme = _normalizeScheme(await storage.getTokenType());
+        await _dio.post(
+          path,
+          options: Options(headers: {'Authorization': '$newScheme $newToken'}),
+        );
+        return;
+      }
+      rethrow;
+    }
+  }
 }
 
 class NotificationServiceException implements Exception {
@@ -121,4 +177,14 @@ class NotificationServiceException implements Exception {
 
   @override
   String toString() => 'NotificationServiceException: $message';
+}
+
+class ClientNotificationsResponse {
+  const ClientNotificationsResponse({
+    required this.items,
+    required this.unreadCount,
+  });
+
+  final List<AppNotification> items;
+  final int unreadCount;
 }

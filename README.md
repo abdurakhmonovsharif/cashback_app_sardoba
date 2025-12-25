@@ -18,7 +18,7 @@ keeps diners engaged without having to build the core UX from scratch.
 - `flutter_svg` for vector assets and iconography
 - `shared_preferences` for local caching and session state
 - `yandex_mapkit` for map views and branch positioning
-- `form_field_validator`, `crypto`, `url_launcher`, and `.env` driven configs
+- `form_field_validator`, `crypto`, `url_launcher`, and dart-define driven configs
 
 ## Project Structure
 - `lib/screens` – page layouts such as branch lists, menus, auth, and loyalty
@@ -33,9 +33,8 @@ keeps diners engaged without having to build the core UX from scratch.
    ```bash
    flutter pub get
    ```
-3. Copy `.env.example` to `.env` and set your own values for the API endpoint
-   and Yandex MapKit key. These values are now consumed by both Flutter and the
-   native Android/iOS launchers.
+3. Provide runtime config via `--dart-define` flags for API endpoint and Yandex
+   MapKit key (see Environment reference).
 4. Launch the app:
    ```bash
    flutter run
@@ -47,6 +46,20 @@ keeps diners engaged without having to build the core UX from scratch.
 | --- | --- |
 | `API_BASE_URL` | Base URL for all REST services (Auth, Catalog, Cashback, etc). |
 | `YANDEX_MAPKIT_API_KEY` | Native Yandex MapKit SDK key used by both Android and iOS bootstrap code. |
+
+### Example run/build with dart-define
+
+```bash
+flutter run \
+  --dart-define=API_BASE_URL=https://api.example.com \
+  --dart-define=YANDEX_MAPKIT_API_KEY=<your-key>
+```
+
+```bash
+flutter build appbundle --release \
+  --dart-define=API_BASE_URL=https://api.example.com \
+  --dart-define=YANDEX_MAPKIT_API_KEY=<your-key>
+```
 
 Run `flutter test` to execute widget or unit tests located in the `test/`
 directory.

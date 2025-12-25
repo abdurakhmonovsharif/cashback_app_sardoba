@@ -20,6 +20,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   List<AppNotification> _items = const [];
   bool _isLoading = true;
   String? _error;
+  int _unreadCount = 0;
+  bool _isMarking = false;
   StreamSubscription<AppNotification>? _subscription;
 
   @override
@@ -47,7 +49,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       final response = await _service.fetchNotifications();
       if (!mounted) return;
       setState(() {
-        _items = response;
+        _items = response.items;
+        _unreadCount = response.unreadCount;
         _isLoading = false;
       });
     } catch (error) {
@@ -61,6 +64,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<void> _refresh() async {
     await _loadNotifications();
+  }
+
+  Future<void> _markAsRead(AppNotification notification) async {
+    if (_isMarking || notification.isRead) return;
+    _isMarking = true;
+    final updatedItems = _items.map((n) {
+      if (n.id == notification.id) {
+        return AppNotification(
+          id: n.id,
+          title: n.title,
+          description: n.description,
+          createdAt: n.createdAt,
+          type: n.type,
+          payload: n.payload,
+          language: n.language,
+          isRead: true,
+          isSent: n.isSent,
+          sentAt: n.sentAt,
+        );
+      }
+      return n;
+    }).toList();
+    setState(() {
+      _items = updatedItems;
+      _unreadCount = (_unreadCount - 1).clamp(0, 9999);
+    });
+    try {
+      await _service.markAsRead(notificationId: notification.id);
+    } catch (_) {
+      // Silently ignore failures; state already updated.
+    } finally {
+      _isMarking = false;
+    }
   }
 
   @override
@@ -81,12 +117,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        title: Text(
-          l10n.notificationsTitle,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: titleColor,
-                fontWeight: FontWeight.w700,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              l10n.notificationsTitle,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: titleColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            if (_unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _unreadCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                  ),
+                ),
               ),
+            ],
+          ],
         ),
       ),
       body: SafeArea(
@@ -179,7 +238,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final item = _items[index];
-                  return _NotificationTile(item: item);
+                  return _NotificationTile(
+                    item: item,
+                    onTap: () => _markAsRead(item),
+                  );
                 },
               ),
             ),
@@ -191,72 +253,92 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 class _NotificationTile extends StatelessWidget {
-  const _NotificationTile({required this.item});
+  const _NotificationTile({required this.item, required this.onTap});
 
   final AppNotification item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
+    final hasUnread = !item.isRead;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.notifications_active_outlined,
-                  color: primaryColor,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  item.title,
-                  style: textTheme.titleSmall?.copyWith(
-                    color: titleColor,
-                    fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: primaryColor.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.notifications_active_outlined,
+                      color: primaryColor,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item.title,
+                      style: textTheme.titleSmall?.copyWith(
+                        color: titleColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  if (hasUnread) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 8),
+                  Text(
+                    _formatDate(item.sentAt ?? item.createdAt),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: bodyTextColor.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
+              const SizedBox(height: 10),
               Text(
-                _formatDate(item.createdAt),
-                style: textTheme.bodySmall?.copyWith(
-                  color: bodyTextColor.withValues(alpha: 0.7),
+                item.description,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: bodyTextColor,
+                  height: 1.4,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            item.description,
-            style: textTheme.bodyMedium?.copyWith(
-              color: bodyTextColor,
-              height: 1.4,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
