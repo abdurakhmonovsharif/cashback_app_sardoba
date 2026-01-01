@@ -13,6 +13,7 @@ import 'screens/pin/pin_lock_screen.dart';
 import 'services/auth_storage.dart';
 import 'services/push_notification_service.dart';
 import 'services/session_sync_service.dart';
+import 'utils/responsive_layout.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,7 @@ class _MyAppState extends State<MyApp> {
           locale: locale,
           child: MaterialApp(
             title: appName,
+            debugShowCheckedModeBanner: false,
             navigatorKey: AppNavigator.navigatorKey,
             locale: locale.flutterLocale,
             supportedLocales: const [Locale('ru'), Locale('uz')],
@@ -96,6 +98,7 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             ),
+            builder: (context, child) => ResponsiveViewport(child: child),
             home: _buildHome(),
           ),
         );

@@ -165,3 +165,8 @@ flutter build appbundle --release \
 flutter run --dart-define=APP_NAME=Sardoba \
   --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
   --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40
+
+
+  flutter run --profile --dart-define=APP_NAME=Sardoba \
+  --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
+  --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40

@@ -297,6 +297,9 @@ class _LocationsScreenState extends State<LocationsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isTablet = screenWidth >= 700;
+    final double mapHeight = isTablet ? 260 : 180;
     final double listBottomPadding = navAwareBottomPadding(context, extra: 24);
 
     return Scaffold(
@@ -326,7 +329,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
               ),
               const SizedBox(height: 20),
               SizedBox(
-                height: 180,
+                height: mapHeight,
                 child: _locationGranted
                     ? _MapContainer(
                         mapObjects: _mapObjects,

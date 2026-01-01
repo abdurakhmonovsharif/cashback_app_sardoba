@@ -66,16 +66,19 @@ class _EntryPointState extends State<EntryPoint> {
           padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
           child: Align(
             alignment: Alignment.bottomCenter,
-            child: FloatingNavBar(
-              navItems: _navItems,
-              selectedIndex: _selectedIndex,
-              onItemSelected: _onTabSelected,
-              onQrPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const QrScreen()),
-                );
-              },
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 760),
+              child: FloatingNavBar(
+                navItems: _navItems,
+                selectedIndex: _selectedIndex,
+                onItemSelected: _onTabSelected,
+                onQrPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const QrScreen()),
+                  );
+                },
+              ),
             ),
           ),
         ),
