@@ -420,19 +420,31 @@ class _ProfileHeader extends StatelessWidget {
                   child: CircleAvatar(
                     radius: 32,
                     backgroundColor: Colors.white,
-                    backgroundImage: hasPhoto
-                        ? NetworkImage(account!.profilePhotoUrl!)
-                        : null,
-                    child: !hasPhoto
-                        ? Text(
+                    child: hasPhoto
+                        ? ClipOval(
+                            child: Image.network(
+                              account!.profilePhotoUrl!,
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Text(
+                                initials,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: primaryColor,
+                                ),
+                              ),
+                            ),
+                          )
+                        : Text(
                             initials,
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                               color: primaryColor,
                             ),
-                          )
-                        : null,
+                          ),
                   ),
                 ),
                 Positioned(

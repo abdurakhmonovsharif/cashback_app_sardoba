@@ -81,6 +81,7 @@ class _NumberVerifyScreenState extends State<NumberVerifyScreen> {
         widget.subtitle ?? _buildDefaultSubtitle(strings, phoneLabel);
 
     return Scaffold(
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         title: Text(widget.title ?? strings.authOtpScreenTitle),
       ),

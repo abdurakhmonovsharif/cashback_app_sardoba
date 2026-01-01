@@ -30,6 +30,13 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   DateTime? _selectedDob;
   String? _dobError;
 
+  DateTime _ageCutoff() {
+    final now = DateTime.now();
+    return DateTime(now.year - 13, now.month, now.day);
+  }
+
+  bool _isUnderMinimumAge(DateTime date) => date.isAfter(_ageCutoff());
+
   Account? get _initialAccount => widget.account;
 
   @override
@@ -170,6 +177,10 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
       setState(() => _dobError = l10n.profileDobValidation);
       return;
     }
+    if (_isUnderMinimumAge(_selectedDob!)) {
+      setState(() => _dobError = l10n.dobTooYoung);
+      return;
+    }
     final firstName = _firstNameController.text.trim();
     final surname = _surnameController.text.trim();
     final middleName = _middleNameController.text.trim();
@@ -234,20 +245,30 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   }
 
   Future<void> _pickBirthDate() async {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final approxInitial = DateTime(now.year - 18, now.month, now.day);
-    final initial = _selectedDob ??
+    final cutoff = _ageCutoff();
+    final baseInitial = _selectedDob ??
         (approxInitial.isBefore(DateTime(1900))
             ? DateTime(1900)
             : (approxInitial.isAfter(now) ? now : approxInitial));
+    final initial = baseInitial.isAfter(cutoff) ? cutoff : baseInitial;
     final picked = await showDatePicker(
       context: context,
       initialDate: initial.isAfter(now) ? now : initial,
       firstDate: DateTime(1900),
-      lastDate: now,
-      helpText: AppLocalizations.of(context).profileDobLabel,
+      lastDate: cutoff,
+      helpText: l10n.profileDobLabel,
     );
     if (picked != null) {
+      if (_isUnderMinimumAge(picked)) {
+        setState(() {
+          _dobError = l10n.dobTooYoung;
+          _selectedDob = null;
+        });
+        return;
+      }
       setState(() {
         _selectedDob = picked;
         _dobError = null;

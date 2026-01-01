@@ -31,6 +31,13 @@ class _SignUpFormState extends State<SignUpForm>
   DateTime? _selectedDob;
   String? _dobError;
 
+  DateTime _ageCutoff() {
+    final now = DateTime.now();
+    return DateTime(now.year - 13, now.month, now.day);
+  }
+
+  bool _isUnderMinimumAge(DateTime date) => date.isAfter(_ageCutoff());
+
   @override
   void initState() {
     super.initState();
@@ -50,16 +57,25 @@ class _SignUpFormState extends State<SignUpForm>
     final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final approx = DateTime(now.year - 18, now.month, now.day);
-    final initial = _selectedDob ??
+    final cutoff = _ageCutoff();
+    final baseInitial = _selectedDob ??
         (approx.isBefore(DateTime(1900)) ? DateTime(1900) : approx);
+    final initial = baseInitial.isAfter(cutoff) ? cutoff : baseInitial;
     final picked = await showDatePicker(
       context: context,
       initialDate: initial.isAfter(now) ? now : initial,
       firstDate: DateTime(1900),
-      lastDate: now,
+      lastDate: cutoff,
       helpText: l10n.authDobLabel,
     );
     if (picked != null) {
+      if (_isUnderMinimumAge(picked)) {
+        setState(() {
+          _dobError = l10n.dobTooYoung;
+          _selectedDob = null;
+        });
+        return;
+      }
       setState(() {
         _selectedDob = picked;
         _dobError = null;
@@ -132,6 +148,10 @@ class _SignUpFormState extends State<SignUpForm>
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_selectedDob == null) {
       setState(() => _dobError = l10n.authDobValidation);
+      return;
+    }
+    if (_isUnderMinimumAge(_selectedDob!)) {
+      setState(() => _dobError = l10n.dobTooYoung);
       return;
     }
 

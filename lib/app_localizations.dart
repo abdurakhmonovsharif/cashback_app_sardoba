@@ -460,6 +460,8 @@ class AppStrings {
   String get authDobHint => _isRu ? 'Выберите дату' : 'Sanani tanlang';
   String get authDobValidation =>
       _isRu ? 'Укажите дату рождения' : 'Tugʻilgan sanani kiriting';
+  String get dobTooYoung =>
+      _isRu ? 'Вам должно быть 13 лет или больше' : '13 yoshdan katta bo‘lishingiz kerak';
   String get formFullNameLabel => _isRu ? 'Полное имя' : 'Toʻliq ism';
   String get formFullNameHint => _isRu ? 'Введите имя' : 'Ismingizni kiriting';
   String get formFullNameRequired =>
