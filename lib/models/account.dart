@@ -20,6 +20,7 @@ class Account {
     this.level,
     this.cashbackHistory,
     this.cardTracks,
+    this.giftget = false,
   });
 
   final String name;
@@ -37,6 +38,7 @@ class Account {
   final String? level;
   final List<CashbackEntry>? cashbackHistory;
   final List<String>? cardTracks;
+  final bool giftget;
 
   Account copyWith({
     String? name,
@@ -54,6 +56,7 @@ class Account {
     String? level,
     List<CashbackEntry>? cashbackHistory,
     List<String>? cardTracks,
+    bool? giftget,
   }) {
     return Account(
       name: name ?? this.name,
@@ -71,6 +74,7 @@ class Account {
       level: level ?? this.level,
       cashbackHistory: cashbackHistory ?? this.cashbackHistory,
       cardTracks: cardTracks ?? this.cardTracks,
+      giftget: giftget ?? this.giftget,
     );
   }
 
@@ -91,6 +95,7 @@ class Account {
         'cashbackHistory':
             cashbackHistory?.map((entry) => entry.toJson()).toList(),
         'cardTracks': cardTracks,
+        'giftget': giftget,
       };
 
   static Account fromJson(Map<String, dynamic> json) {
@@ -119,6 +124,7 @@ class Account {
           .toList(),
       cardTracks:
           (json['cardTracks'] as List?)?.whereType<String>().toList(),
+      giftget: json['giftget'] as bool? ?? false,
     );
   }
 

@@ -92,7 +92,7 @@ class _SavedLocationsScreenState extends State<SavedLocationsScreen> {
     final theme = Theme.of(context);
     final locations = _service.locations;
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -372,7 +372,7 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
     final theme = Theme.of(context);
     final isEditing = widget.location != null;
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

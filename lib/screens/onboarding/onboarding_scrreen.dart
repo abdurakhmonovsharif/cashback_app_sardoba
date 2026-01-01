@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import '../../constants.dart';
 import '../auth/sign_in_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -76,11 +78,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final viewPadding = MediaQuery.of(context).padding;
-    final bottomPadding = 28 + viewPadding.bottom + 20;
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0F1217),
+      backgroundColor: screenBackgroundColor,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         systemOverlayStyle: SystemUiOverlayStyle.light,
@@ -112,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ),
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.fromLTRB(28, 80, 28, bottomPadding),
+              padding: EdgeInsets.fromLTRB(28, 80, 28, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -188,7 +187,8 @@ class _SwipeToStartButtonState extends State<_SwipeToStartButton> {
         final trackWidth = constraints.maxWidth;
         const knobSize = 58.0;
         const sliderPadding = EdgeInsets.symmetric(horizontal: 4, vertical: 0);
-        const endInset = 6.0; // prevent the knob from overshooting the pill edges
+        const endInset =
+            6.0; // prevent the knob from overshooting the pill edges
         final innerTrackWidth =
             (trackWidth - sliderPadding.horizontal).clamp(0.0, double.infinity);
         final maxOffset =
@@ -208,9 +208,7 @@ class _SwipeToStartButtonState extends State<_SwipeToStartButton> {
             children: [
               Center(
                 child: Text(
-                  widget.progress >= 0.9
-                      ? 'Oldinga'
-                      : 'Boshlash',
+                  widget.progress >= 0.9 ? 'Oldinga' : 'Boshlash',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,

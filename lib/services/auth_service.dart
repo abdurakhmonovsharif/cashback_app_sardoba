@@ -470,6 +470,10 @@ class AuthService {
         .where((value) => value.isNotEmpty)
         .toList();
 
+    final giftget = (source['giftget'] as bool?) ??
+        (source['gift_get'] as bool?) ??
+        false;
+
     return Account(
       name: resolvedName,
       surname: resolvedSurname,
@@ -486,6 +490,7 @@ class AuthService {
       level: _string(source['level']) ?? loyalty?.level,
       cashbackHistory: cashbackHistory,
       cardTracks: cardTracks,
+      giftget: giftget,
     );
   }
 

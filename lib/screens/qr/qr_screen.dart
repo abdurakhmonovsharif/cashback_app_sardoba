@@ -26,6 +26,7 @@ class _QrScreenState extends State<QrScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Scaffold(
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         title: Text(l10n.qrScreenTitle),
       ),

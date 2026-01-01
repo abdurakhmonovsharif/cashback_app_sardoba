@@ -100,7 +100,7 @@ class FloatingNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
-    final double safeOffset = bottomInset > 0 ? bottomInset * 0.45 : 0;
+    final double safeOffset = bottomInset > 0 ? bottomInset * 0.20 : 0;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + safeOffset),
       child: SizedBox(

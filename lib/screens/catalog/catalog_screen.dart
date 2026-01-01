@@ -484,7 +484,7 @@ class _CategoryThumbnail extends StatelessWidget {
 
   Widget _fallbackIcon() {
     return Container(
-      color: const Color(0xFFF3F5F9),
+      color: screenBackgroundColor,
       alignment: Alignment.center,
       child: const Icon(
         Icons.fastfood_outlined,

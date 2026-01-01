@@ -127,6 +127,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final forms = <String>{
       lower,
       _latinToCyrillic(lower),
+      _cyrillicToLatin(lower),
     };
     return forms.where((value) => value.trim().isNotEmpty).toList();
   }
@@ -279,6 +280,56 @@ class _SearchScreenState extends State<SearchScreen> {
     return buffer.toString();
   }
 
+  String _cyrillicToLatin(String input) {
+    const map = {
+      'ш': 'sh',
+      'ч': 'ch',
+      'ё': 'yo',
+      'ю': 'yu',
+      'я': 'ya',
+      'ц': 'ts',
+      'ң': 'ng',
+      'ғ': "g'",
+      'ў': "o'",
+      'қ': 'q',
+      'ҳ': 'h',
+      'й': 'y',
+      'ж': 'j',
+      'а': 'a',
+      'б': 'b',
+      'в': 'v',
+      'г': 'g',
+      'д': 'd',
+      'е': 'e',
+      'з': 'z',
+      'и': 'i',
+      'к': 'k',
+      'л': 'l',
+      'м': 'm',
+      'н': 'n',
+      'о': 'o',
+      'п': 'p',
+      'р': 'r',
+      'с': 's',
+      'т': 't',
+      'у': 'u',
+      'ф': 'f',
+      'х': 'x',
+      'ъ': '',
+      'ь': '',
+      'э': 'e',
+      'ы': 'i',
+    };
+
+    final buffer = StringBuffer();
+    for (final char in input.runes) {
+      final ch = String.fromCharCode(char);
+      final lower = ch.toLowerCase();
+      buffer.write(map[lower] ?? ch);
+    }
+    return buffer.toString();
+  }
+
   CatalogPrice? _priceForActiveBranch(CatalogItem item) {
     final storeId = _activeBranch?.storeId;
     if (storeId == null) return null;
@@ -351,6 +402,7 @@ class _SearchScreenState extends State<SearchScreen> {
         title: Text(l10n.searchHint),
         centerTitle: true,
       ),
+      backgroundColor: screenBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(
@@ -513,7 +565,8 @@ class _SearchResultCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(10),
           child: Row(
             children: [
@@ -569,7 +622,7 @@ class _ProductThumb extends StatelessWidget {
       height: 72,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: const Color(0xFFF3F5F9),
+        color: screenBackgroundColor,
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
@@ -598,7 +651,7 @@ class _ThumbPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF3F5F9),
+      color: screenBackgroundColor,
       alignment: Alignment.center,
       child: Icon(icon, color: bodyTextColor),
     );

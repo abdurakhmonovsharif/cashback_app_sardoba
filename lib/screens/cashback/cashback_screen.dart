@@ -381,6 +381,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
           );
 
     return Scaffold(
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         title: Text(l10n.cashbackScreenTitle),
         centerTitle: true,

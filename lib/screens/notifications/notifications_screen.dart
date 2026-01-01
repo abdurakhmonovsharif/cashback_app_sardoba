@@ -111,7 +111,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final l10n = AppLocalizations.of(context);
     final body = _buildBody(l10n);
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

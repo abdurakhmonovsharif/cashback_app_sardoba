@@ -72,7 +72,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
     final canGenerate = _account != null && _account!.phone.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

@@ -82,7 +82,7 @@ class _PinSetupScreenState extends State<PinSetupScreen> {
         ? l10n.pinSetupConfirmSubtitle
         : l10n.pinSetupCreateSubtitle;
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF7F2),
+      backgroundColor: screenBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding:

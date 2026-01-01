@@ -137,7 +137,7 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
     final subtitle = _buildSubtitle(l10n);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF7F2),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

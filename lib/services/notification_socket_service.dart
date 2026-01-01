@@ -200,10 +200,14 @@ class NotificationSocketManager {
     try {
       final payload = _normalizePayload(message);
       if (payload == null) return;
+      final isEphemeral = _isEphemeralNotification(payload);
       final notification = _toAppNotification(payload);
-      _controller.add(notification);
+      if (!isEphemeral) {
+        _controller.add(notification);
+      }
+      final safeLocalId = _safeLocalNotificationId(notification.id);
       _pushManager.showNotification(
-        id: notification.id,
+        id: safeLocalId,
         title: notification.title,
         body: notification.description,
         payload: notification.id.toString(),
@@ -281,10 +285,7 @@ class NotificationSocketManager {
     final idValue = payload['notification_id'] ??
         payload['id'] ??
         payload['notificationId'];
-    final id = (idValue is num)
-        ? idValue.toInt()
-        : int.tryParse(idValue?.toString() ?? '') ??
-            DateTime.now().millisecondsSinceEpoch;
+    final id = _normalizeId(idValue);
     final createdRaw =
         payload['created_at'] ?? payload['createdAt'] ?? payload['timestamp'];
     final createdAt = _parseDate(createdRaw);
@@ -307,6 +308,33 @@ class NotificationSocketManager {
       payload: parsePayload(payload['payload']),
       isSent: true,
     );
+  }
+
+  int _normalizeId(dynamic raw) {
+    const max32Bit = 0x7fffffff;
+    if (raw is num) {
+      return raw.toInt().clamp(-max32Bit, max32Bit);
+    }
+    final parsed = int.tryParse(raw?.toString() ?? '');
+    if (parsed != null) {
+      return parsed.clamp(-max32Bit, max32Bit);
+    }
+    // Ephemeral notifications: derive a 32-bit-safe ID from timestamp.
+    final millis = DateTime.now().millisecondsSinceEpoch;
+    return millis % max32Bit;
+  }
+
+  bool _isEphemeralNotification(Map<String, dynamic> payload) {
+    final idValue =
+        payload['notification_id'] ?? payload['id'] ?? payload['notificationId'];
+    return idValue == null;
+  }
+
+  int _safeLocalNotificationId(int id) {
+    const max32Bit = 0x7fffffff;
+    final normalized = id % max32Bit;
+    // Avoid zero ID which can be treated specially by some platforms.
+    return normalized == 0 ? 1 : normalized.abs();
   }
 
   DateTime _parseDate(dynamic value) {

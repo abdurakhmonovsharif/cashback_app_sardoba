@@ -18,11 +18,15 @@ import '../../services/catalog_repository.dart';
 import '../../services/news_service.dart';
 import '../../entry_point.dart';
 import '../../services/session_sync_service.dart';
+import '../../services/notification_service.dart';
+import '../../services/notification_socket_service.dart';
+import '../../models/app_notification.dart';
 import '../catalog/catalog_screen.dart';
 import '../catalog/product_details_screen.dart';
 import '../cashback/cashback_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../qr/qr_screen.dart';
+import '../search/search_screen.dart';
 
 const AssetImage _kCheesecakeBannerImage =
     AssetImage('assets/images/cheesecake_banner.jpg');
@@ -35,12 +39,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final GlobalKey<_CheesecakePromoBannerState> _newsBannerKey =
+      GlobalKey<_CheesecakePromoBannerState>();
+
   Future<void> _refreshHome() async {
     final account = await SessionSyncService.instance.sync();
     if (account != null) {
       // Emit the latest profile (including cashback) to listening widgets.
       await AuthStorage.instance.updateCurrentAccount(account);
     }
+    // Refresh featured news on pull-to-refresh.
+    await _newsBannerKey.currentState?.reloadNews();
+  }
+
+  Future<void> _openSearch() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SearchScreen()),
+    );
   }
 
   InputDecoration _buildSearchDecoration(BuildContext context) {
@@ -104,10 +119,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         const RepaintBoundary(child: _HomeHeader()),
                         const SizedBox(height: 24),
                         TextField(
+                          readOnly: true,
+                          onTap: _openSearch,
                           decoration: _buildSearchDecoration(context),
                         ),
-                        const SizedBox(height: 18),
-                        const _CheesecakePromoBanner(),
+                        const SizedBox(height: 14),
+                        _CheesecakePromoBanner(key: _newsBannerKey),
                       ],
                     ),
                   ),
@@ -179,6 +196,10 @@ class _HomeHeaderState extends State<_HomeHeader>
     with SingleTickerProviderStateMixin {
   final BranchState _branchState = BranchState.instance;
   late Branch _activeBranch;
+  final NotificationService _notificationService = NotificationService();
+  StreamSubscription<AppNotification>? _notifSubscription;
+  int _unreadCount = 0;
+  bool _isFetchingUnread = false;
 
   late final AnimationController _notifController = AnimationController(
     vsync: this,
@@ -192,6 +213,32 @@ class _HomeHeaderState extends State<_HomeHeader>
     super.initState();
     _activeBranch = _branchState.activeBranch;
     _branchState.addListener(_handleBranchChange);
+    _loadUnreadCount();
+    _notifSubscription =
+        NotificationSocketManager.instance.notificationStream.listen(
+      (AppNotification notification) {
+        if (!mounted) return;
+        setState(() {
+          _unreadCount = (_unreadCount + 1).clamp(0, 9999).toInt();
+        });
+      },
+    );
+  }
+
+  Future<void> _loadUnreadCount() async {
+    if (_isFetchingUnread) return;
+    _isFetchingUnread = true;
+    try {
+      final response = await _notificationService.fetchNotifications(limit: 1);
+      if (!mounted) return;
+      setState(() {
+        _unreadCount = response.unreadCount.clamp(0, 9999).toInt();
+      });
+    } catch (_) {
+      // Ignore errors; badge is non-blocking.
+    } finally {
+      _isFetchingUnread = false;
+    }
   }
 
   void _handleBranchChange() {
@@ -203,6 +250,8 @@ class _HomeHeaderState extends State<_HomeHeader>
   @override
   void dispose() {
     _branchState.removeListener(_handleBranchChange);
+    _notifSubscription?.cancel();
+    _notificationService.dispose();
     _notifController.dispose();
     super.dispose();
   }
@@ -215,11 +264,13 @@ class _HomeHeaderState extends State<_HomeHeader>
     await _notifController.forward(from: 0);
     await _notifController.reverse();
     if (!mounted) return;
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const NotificationsScreen(),
       ),
     );
+    if (!mounted) return;
+    await _loadUnreadCount();
   }
 
   @override
@@ -289,6 +340,7 @@ class _HomeHeaderState extends State<_HomeHeader>
           child: _HeaderActionButton(
             icon: Icons.notifications_none_rounded,
             onTap: _openNotifications,
+            badgeCount: _unreadCount,
           ),
         ),
       ],
@@ -300,13 +352,18 @@ class _HeaderActionButton extends StatelessWidget {
   const _HeaderActionButton({
     required this.icon,
     required this.onTap,
+    this.badgeCount = 0,
   });
 
   final IconData icon;
   final VoidCallback onTap;
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
+    final hasBadge = badgeCount > 0;
+    final badgeText = badgeCount > 99 ? '99+' : badgeCount.toString();
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -325,7 +382,42 @@ class _HeaderActionButton extends StatelessWidget {
               ),
             ],
           ),
-          child: Icon(icon, color: titleColor),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(icon, color: titleColor),
+              if (hasBadge)
+                Positioned(
+                  right: -9,
+                  top: -13,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1.5,
+                      ),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 18),
+                    child: Text(
+                      badgeText,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        height: 1.1,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -333,7 +425,7 @@ class _HeaderActionButton extends StatelessWidget {
 }
 
 class _CheesecakePromoBanner extends StatefulWidget {
-  const _CheesecakePromoBanner();
+  const _CheesecakePromoBanner({super.key});
 
   @override
   State<_CheesecakePromoBanner> createState() => _CheesecakePromoBannerState();
@@ -341,7 +433,12 @@ class _CheesecakePromoBanner extends StatefulWidget {
 
 class _CheesecakePromoBannerState extends State<_CheesecakePromoBanner> {
   final NewsService _newsService = NewsService();
-  NewsItem? _news;
+  // Slightly reduced viewport to peek adjacent cards minimally.
+  final PageController _pageController = PageController(viewportFraction: 0.97);
+  List<NewsItem> _news = const [];
+  int _activeIndex = 0;
+  bool _isLoading = true;
+  bool _showGift = false;
 
   @override
   void initState() {
@@ -352,24 +449,73 @@ class _CheesecakePromoBannerState extends State<_CheesecakePromoBanner> {
         if (!mounted) return;
         _loadNews();
       });
+      _loadGiftEligibility();
+    });
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    // Reset legacy state after hot reload to avoid type mismatches.
+    _news = const [];
+    _activeIndex = 0;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadNews();
+      _loadGiftEligibility();
     });
   }
 
   @override
   void dispose() {
     _newsService.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
   Future<void> _loadNews() async {
+    setState(() => _isLoading = true);
     try {
-      final featured = await _newsService.fetchFeaturedNews();
+      final items = await _newsService.fetchNews();
+      items.sort((a, b) {
+        final priorityCompare = b.priority.compareTo(a.priority);
+        if (priorityCompare != 0) return priorityCompare;
+        return b.createdAt.compareTo(a.createdAt);
+      });
       if (!mounted) return;
-      setState(() => _news = featured);
+      setState(() {
+        _news = items;
+        _activeIndex = 0;
+        _isLoading = false;
+      });
     } catch (_) {
       if (!mounted) return;
-      setState(() => _news = null);
+      setState(() {
+        _news = const [];
+        _isLoading = false;
+      });
     }
+  }
+
+  Future<void> reloadNews() async {
+    if (!mounted) return;
+    setState(() {
+      _news = const [];
+      _activeIndex = 0;
+      _isLoading = true;
+    });
+    await _loadNews();
+    await _loadGiftEligibility();
+  }
+
+  Future<void> _loadGiftEligibility() async {
+    // Refresh profile to ensure latest gift flag.
+    await SessionSyncService.instance.sync();
+    final account = await AuthStorage.instance.getCurrentAccount();
+    if (!mounted) return;
+    setState(() {
+      _showGift = !(account?.giftget ?? false);
+    });
   }
 
   void _openQrScreen() {
@@ -392,6 +538,23 @@ class _CheesecakePromoBannerState extends State<_CheesecakePromoBanner> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (news.imageUrl != null && news.imageUrl!.isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: Image.network(
+                      news.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Image(
+                        image: _kCheesecakeBannerImage,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               Text(
                 news.title,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -425,12 +588,69 @@ class _CheesecakePromoBannerState extends State<_CheesecakePromoBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (_news == null) {
-      return _StaticCheesecakeBanner(onCta: _openQrScreen);
+    final giftSlides = _showGift ? 1 : 0;
+    final totalSlides = _news.length + giftSlides;
+    if (_isLoading) {
+      return const _NewsCarouselSkeleton();
     }
-    return _NewsBanner(
-      news: _news!,
-      onDetails: () => _showNewsDetails(_news!),
+    if (totalSlides == 0) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      children: [
+        SizedBox(
+          height: 210,
+          child: PageView.builder(
+            controller: _pageController,
+            padEnds: false,
+            itemCount: totalSlides,
+            onPageChanged: (index) {
+              setState(() => _activeIndex = index.clamp(0, totalSlides - 1));
+            },
+            itemBuilder: (context, index) {
+              final padding = index == totalSlides - 1 ? 0.0 : 4.0;
+              if (_showGift && index == 0) {
+                return Padding(
+                  padding: EdgeInsets.only(right: padding),
+                  child: _StaticCheesecakeBanner(onCta: _openQrScreen),
+                );
+              } else {
+                final newsIndex = _showGift ? index - 1 : index;
+                final news = _news[newsIndex];
+                return Padding(
+                  padding: EdgeInsets.only(right: padding),
+                  child: _NewsBanner(
+                    news: news,
+                    onDetails: () => _showNewsDetails(news),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+        if (totalSlides > 1) ...[
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(totalSlides, (index) {
+              final isActive = index == _activeIndex;
+              return AnimatedContainer(
+                duration: kDefaultDuration,
+                curve: Curves.easeOut,
+                width: isActive ? 18 : 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? primaryColor
+                      : primaryColor.withValues(alpha: 0.25),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              );
+            }),
+          ),
+        ],
+      ],
     );
   }
 
@@ -476,7 +696,7 @@ class _StaticCheesecakeBanner extends StatelessWidget {
           ],
         ),
         clipBehavior: Clip.antiAlias,
-        padding: const EdgeInsets.all(28),
+        padding: const EdgeInsets.all(22),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -490,7 +710,7 @@ class _StaticCheesecakeBanner extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
 
             /// SUBTITLE
             Text(
@@ -502,7 +722,7 @@ class _StaticCheesecakeBanner extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 10),
 
             /// CTA BUTTON
             SizedBox(
@@ -544,17 +764,12 @@ class _NewsBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
+    final hasImage = news.imageUrl != null && news.imageUrl!.isNotEmpty;
     return RepaintBoundary(
       child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 190),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [
-              Color(0xFFF0F9FF),
-              Color(0xFFE4F2FF),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
@@ -564,76 +779,16 @@ class _NewsBanner extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.fromLTRB(22, 22, 18, 18),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    news.title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: titleColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    news.description,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF5B6375),
-                      height: 1.35,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onDetails,
-                      style: ElevatedButton.styleFrom(
-                        elevation: 0,
-                        backgroundColor: Colors.white,
-                        foregroundColor: primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        textStyle: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      child: Text(l10n.newsBannerButton),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Container(
-              width: 118,
-              height: 118,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x3350465F),
-                    blurRadius: 24,
-                    offset: Offset(0, 18),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(18),
-                child: news.imageUrl != null
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: hasImage
                     ? Image.network(
                         news.imageUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image(
+                        errorBuilder: (_, __, ___) => const Image(
                           image: _kCheesecakeBannerImage,
                           fit: BoxFit.cover,
                         ),
@@ -643,10 +798,218 @@ class _NewsBanner extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
               ),
-            ),
-          ],
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withValues(alpha: 0.45),
+                        Colors.black.withValues(alpha: 0.28),
+                        Colors.black.withValues(alpha: 0.35),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.04),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        news.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        news.description,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.95),
+                          height: 1.35,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          width: 160,
+                          child: ElevatedButton(
+                            onPressed: onDetails,
+                            style: ElevatedButton.styleFrom(
+                              elevation: 0,
+                              backgroundColor: Colors.white,
+                              foregroundColor: primaryColor,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              textStyle: theme.textTheme.labelLarge?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            child: Text(l10n.newsBannerButton),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _NewsCarouselSkeleton extends StatelessWidget {
+  const _NewsCarouselSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 210,
+      child: Row(
+        children: const [
+          Expanded(child: _NewsCardSkeleton()),
+          SizedBox(width: 8),
+          SizedBox(
+            width: 24,
+            child: _NewsCardSkeleton(shrink: true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NewsCardSkeleton extends StatelessWidget {
+  const _NewsCardSkeleton({this.shrink = false});
+
+  final bool shrink;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ShimmerSkeleton(
+      borderRadius: 24,
+      height: 210,
+      width: shrink ? double.infinity : null,
+    );
+  }
+}
+
+class _ShimmerSkeleton extends StatefulWidget {
+  const _ShimmerSkeleton({
+    this.height,
+    this.width,
+    this.borderRadius = 16,
+  });
+
+  final double? height;
+  final double? width;
+  final double borderRadius;
+
+  @override
+  State<_ShimmerSkeleton> createState() => _ShimmerSkeletonState();
+}
+
+class _ShimmerSkeletonState extends State<_ShimmerSkeleton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Colors.grey.shade200;
+    final highlight = Colors.grey.shade100;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = widget.width ?? constraints.maxWidth;
+        final height = widget.height ?? constraints.maxHeight;
+        return Container(
+          width: width > 0 ? width : null,
+          height: height > 0 ? height : null,
+          decoration: BoxDecoration(
+            color: base,
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              final shimmerWidth = (width.isFinite && width > 0)
+                  ? width * 0.6
+                  : MediaQuery.of(context).size.width * 0.3;
+              final offset =
+                  (_controller.value * ((width.isFinite && width > 0) ? width : MediaQuery.of(context).size.width));
+              return Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(color: base),
+                  ),
+                  Positioned(
+                    left: offset - shimmerWidth,
+                    top: -height,
+                    bottom: -height,
+                    child: Container(
+                      width: shimmerWidth,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            base.withValues(alpha: 0.0),
+                            highlight.withValues(alpha: 0.8),
+                            base.withValues(alpha: 0.0),
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        );
+      },
     );
   }
 }

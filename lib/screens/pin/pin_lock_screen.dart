@@ -102,7 +102,7 @@ class _PinLockScreenState extends State<PinLockScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF7F2),
+      backgroundColor: screenBackgroundColor,
       body: Stack(
         children: [
           SafeArea(

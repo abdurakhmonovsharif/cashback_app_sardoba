@@ -262,7 +262,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     final hasAccount = _initialAccount != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

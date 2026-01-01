@@ -142,9 +142,9 @@ class _CatalogProductDetailsScreenState
         .toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F5F9),
+      backgroundColor: screenBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF3F5F9),
+        backgroundColor: screenBackgroundColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: titleColor),
         title: Text(
@@ -471,7 +471,7 @@ class _RelatedImagePlaceholder extends StatelessWidget {
     return Container(
       height: 100,
       width: double.infinity,
-      color: const Color(0xFFF3F5F9),
+      color: screenBackgroundColor,
       alignment: Alignment.center,
       child: const Icon(
         Icons.fastfood_outlined,
