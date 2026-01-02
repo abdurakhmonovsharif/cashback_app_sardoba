@@ -28,6 +28,7 @@ class _SignUpFormState extends State<SignUpForm>
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
+  bool _isAdjustingPhone = false;
   DateTime? _selectedDob;
   String? _dobError;
 
@@ -84,6 +85,7 @@ class _SignUpFormState extends State<SignUpForm>
   }
 
   void _handlePhoneChanged() {
+    _enforceLeadingPlus();
     final digitsOnly =
         _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '').trim();
     final nextIsValid = digitsOnly.length >= 10;
@@ -93,6 +95,22 @@ class _SignUpFormState extends State<SignUpForm>
         _isPhoneValid = nextIsValid;
       });
     }
+  }
+
+  void _enforceLeadingPlus() {
+    if (_isAdjustingPhone) return;
+    final text = _phoneController.text;
+    if (text.isEmpty) return;
+    final normalized = text.startsWith('+')
+        ? text.replaceFirst(RegExp(r'^\++'), '+')
+        : '+$text';
+    if (normalized == text) return;
+    _isAdjustingPhone = true;
+    _phoneController.value = TextEditingValue(
+      text: normalized,
+      selection: TextSelection.collapsed(offset: normalized.length),
+    );
+    _isAdjustingPhone = false;
   }
 
   InputDecoration _buildInputDecoration(String hint, {Widget? suffix}) {

@@ -25,6 +25,7 @@ class _SignInFormState extends State<SignInForm> {
   bool _isPhoneValid = false;
   bool _isSubmitting = false;
   final TextEditingController _phoneController = TextEditingController();
+  bool _isAdjustingPhone = false;
 
   @override
   void initState() {
@@ -40,6 +41,7 @@ class _SignInFormState extends State<SignInForm> {
   }
 
   void _handlePhoneChanged() {
+    _enforceLeadingPlus();
     final digitsOnly =
         _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '').trim();
     final nextIsValid = digitsOnly.length >= 10;
@@ -49,6 +51,23 @@ class _SignInFormState extends State<SignInForm> {
         _isPhoneValid = nextIsValid;
       });
     }
+  }
+
+  void _enforceLeadingPlus() {
+    if (_isAdjustingPhone) return;
+    final text = _phoneController.text;
+    if (text.isEmpty) return;
+    // Ensure exactly one leading "+" and keep the rest of the input as-is.
+    final normalized = text.startsWith('+')
+        ? text.replaceFirst(RegExp(r'^\++'), '+')
+        : '+$text';
+    if (normalized == text) return;
+    _isAdjustingPhone = true;
+    _phoneController.value = TextEditingValue(
+      text: normalized,
+      selection: TextSelection.collapsed(offset: normalized.length),
+    );
+    _isAdjustingPhone = false;
   }
 
   InputDecoration _buildInputDecoration(
