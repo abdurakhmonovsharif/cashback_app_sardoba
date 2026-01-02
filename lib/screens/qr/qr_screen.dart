@@ -52,9 +52,9 @@ class _QrScreenState extends State<QrScreen> {
               l10n: l10n,
             );
           }
-          final phone = account?.phone ?? '';
+          final phone = account.phone;
           final normalizedPhone = _formatPhone(phone);
-          final cardTrack = (account?.cardTracks?.isNotEmpty ?? false)
+          final cardTrack = (account.cardTracks?.isNotEmpty ?? false)
               ? account.cardTracks!.last
               : null;
           final qrData = cardTrack ?? normalizedPhone;
@@ -70,7 +70,7 @@ class _QrScreenState extends State<QrScreen> {
           return _QrContent(
             qrData: qrData,
             phoneLabel: phoneLabel, 
-            displayName: account?.name ?? '',
+            displayName: account.name,
             l10n: l10n,
           );
         },

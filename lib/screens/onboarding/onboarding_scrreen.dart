@@ -44,6 +44,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (_isCompleting) return;
     setState(() => _isCompleting = true);
     await AuthStorage.instance.setOnboardingCompleted(true);
+    if (!mounted) return;
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const EntryPoint()),
     );

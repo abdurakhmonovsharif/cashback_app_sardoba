@@ -111,24 +111,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
     if (_hasPromptedForLocation) return;
     _hasPromptedForLocation = true;
 
-    await _promptForLocationAccess();
-  }
-
-  Future<void> _promptForLocationAccess() async {
-    if (!mounted) return;
-    final strings = AppLocalizations.of(context);
-    final allowAccess = await showModalBottomSheet<bool>(
-          context: context,
-          isScrollControlled: true,
-          backgroundColor: Colors.white,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          builder: (_) => _LocationPermissionSheet(strings: strings),
-        ) ??
-        false;
-
-    if (!mounted || !allowAccess) return;
     await _requestLocationPermission();
   }
 
@@ -341,7 +323,7 @@ class _LocationsScreenState extends State<LocationsScreen> {
                     : _LocationPlaceholder(
                         onAllow: () async {
                           _hasPromptedForLocation = true;
-                          await _promptForLocationAccess();
+                          await _requestLocationPermission();
                         },
                       ),
               ),
@@ -513,84 +495,6 @@ class _LocationPlaceholder extends StatelessWidget {
                   ),
                 ),
                 child: Text(l10n.locationPermissionAllow),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LocationPermissionSheet extends StatelessWidget {
-  const _LocationPermissionSheet({required this.strings});
-
-  final AppStrings strings;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bottomPadding = MediaQuery.of(context).viewPadding.bottom;
-
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottomPadding),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              strings.locationPermissionTitle,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: titleColor,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              strings.locationPermissionDescription,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: bodyTextColor,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: bodyTextColor,
-                      side: BorderSide(color: Colors.grey.shade300),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text(strings.locationPermissionDeny),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    child: Text(strings.locationPermissionAllow),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Text(
-              strings.locationPermissionHint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: bodyTextColor.withValues(alpha: 0.6),
               ),
             ),
           ],
