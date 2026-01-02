@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../constants.dart';
-import '../auth/sign_in_screen.dart';
+import '../../entry_point.dart';
+import '../../services/auth_storage.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -42,8 +43,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Future<void> _startJourney() async {
     if (_isCompleting) return;
     setState(() => _isCompleting = true);
+    await AuthStorage.instance.setOnboardingCompleted(true);
     await Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const SignInScreen()),
+      MaterialPageRoute(builder: (context) => const EntryPoint()),
     );
   }
 

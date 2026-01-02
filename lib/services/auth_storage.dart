@@ -19,6 +19,7 @@ class AuthStorage {
   static const _authTokenKey = 'auth_token';
   static const _refreshTokenKey = 'refresh_token';
   static const _tokenTypeKey = 'auth_token_type';
+  static const _onboardingDoneKey = 'onboarding_done';
 
   SharedPreferences? _prefs;
 
@@ -96,6 +97,16 @@ class AuthStorage {
   Future<void> logout() async {
     await clearPin();
     await clearCurrentUser();
+  }
+
+  Future<void> setOnboardingCompleted(bool value) async {
+    await ensureInitialized();
+    await _prefs!.setBool(_onboardingDoneKey, value);
+  }
+
+  Future<bool> isOnboardingCompleted() async {
+    await ensureInitialized();
+    return _prefs!.getBool(_onboardingDoneKey) ?? false;
   }
 
   Future<bool> refreshTokens({AuthService? authService}) async {

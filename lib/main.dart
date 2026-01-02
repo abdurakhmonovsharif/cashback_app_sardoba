@@ -165,7 +165,13 @@ class _MyAppState extends State<MyApp> {
 
     final hasUser = await storage.hasCurrentUser();
 
-    if (!hasUser) return _AppStartDestination.onboarding;
+    final onboardingDone = await storage.isOnboardingCompleted();
+
+    if (!hasUser) {
+      return onboardingDone
+          ? _AppStartDestination.entry
+          : _AppStartDestination.onboarding;
+    }
 
     final hasPin = await storage.hasPin();
 

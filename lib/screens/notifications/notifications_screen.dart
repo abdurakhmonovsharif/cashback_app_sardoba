@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../models/app_notification.dart';
+import '../../services/auth_storage.dart';
 import '../../services/notification_service.dart';
 import '../../services/notification_socket_service.dart';
+import '../auth/sign_in_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -19,6 +21,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   final NotificationService _service = NotificationService();
   List<AppNotification> _items = const [];
   bool _isLoading = true;
+  bool _needsLogin = false;
   String? _error;
   int _unreadCount = 0;
   bool _isMarking = false;
@@ -43,9 +46,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadNotifications() async {
     setState(() {
       _isLoading = true;
+      _needsLogin = false;
       _error = null;
     });
     try {
+      final token = await AuthStorage.instance.getAccessToken();
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _needsLogin = true;
+          _isLoading = false;
+          _items = const [];
+          _unreadCount = 0;
+        });
+        return;
+      }
       final response = await _service.fetchNotifications();
       if (!mounted) return;
       setState(() {
@@ -157,6 +171,49 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget _buildBody(AppStrings l10n) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
+    }
+    if (_needsLogin) {
+      return Padding(
+        padding: const EdgeInsets.all(defaultPadding * 2),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.lock_outline, size: 64, color: bodyTextColor),
+            const SizedBox(height: 14),
+            Text(
+              l10n.notificationsScreenError,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: titleColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              l10n.profileLoginRequired,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: bodyTextColor),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 48,
+              width: 200,
+              child: ElevatedButton(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SignInScreen()),
+                  );
+                  if (!mounted) return;
+                  await _loadNotifications();
+                },
+                child: Text(l10n.authSignInCta),
+              ),
+            ),
+          ],
+        ),
+      );
     }
     if (_error != null) {
       return Padding(

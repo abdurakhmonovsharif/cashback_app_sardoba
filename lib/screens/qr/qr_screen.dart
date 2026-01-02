@@ -5,6 +5,7 @@ import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../models/account.dart';
 import '../../services/auth_storage.dart';
+import '../auth/sign_in_screen.dart';
 
 class QrScreen extends StatefulWidget {
   const QrScreen({super.key});
@@ -45,10 +46,16 @@ class _QrScreenState extends State<QrScreen> {
           }
 
           final account = snapshot.data;
+          if (account == null) {
+            return _QrLoginPrompt(
+              onLogin: _openLogin,
+              l10n: l10n,
+            );
+          }
           final phone = account?.phone ?? '';
           final normalizedPhone = _formatPhone(phone);
           final cardTrack = (account?.cardTracks?.isNotEmpty ?? false)
-              ? account!.cardTracks!.last
+              ? account.cardTracks!.last
               : null;
           final qrData = cardTrack ?? normalizedPhone;
           final phoneLabel = normalizedPhone ?? '';
@@ -77,6 +84,16 @@ class _QrScreenState extends State<QrScreen> {
     final digitsOnly = cleaned.startsWith('+') ? cleaned.substring(1) : cleaned;
     if (digitsOnly.isEmpty) return null;
     return '+$digitsOnly';
+  }
+
+  Future<void> _openLogin() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SignInScreen()),
+    );
+    if (!mounted) return;
+    setState(() {
+      _accountFuture = AuthStorage.instance.getCurrentAccount();
+    });
   }
 }
 
@@ -225,6 +242,65 @@ class _QrMessage extends StatelessWidget {
               subtitle,
               style: theme.textTheme.bodyMedium?.copyWith(color: bodyTextColor),
               textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QrLoginPrompt extends StatelessWidget {
+  const _QrLoginPrompt({
+    required this.onLogin,
+    required this.l10n,
+  });
+
+  final VoidCallback onLogin;
+  final AppStrings l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.lock_outline, size: 48, color: bodyTextColor),
+            const SizedBox(height: 12),
+            Text(
+              l10n.qrScreenPhoneMissingTitle,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: titleColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.qrScreenPhoneMissingSubtitle,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: bodyTextColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 46,
+              width: 200,
+              child: ElevatedButton(
+                onPressed: onLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Text(l10n.authSignInCta),
+              ),
             ),
           ],
         ),

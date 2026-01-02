@@ -45,6 +45,13 @@ class NotificationSocketManager {
 
   Future<void> start() async {
     if (_isStarting || _shouldReconnect) return;
+    final token = await _storage.getAccessToken();
+    if (token == null || token.isEmpty) {
+      debugPrint('⚠️ Skipping notification WS start: no access token (guest mode).');
+      connectionState.value = SocketConnectionState.disconnected;
+      _shouldReconnect = false;
+      return;
+    }
     _isStarting = true;
     debugPrint('🔌 Notification WS starting…');
     try {
