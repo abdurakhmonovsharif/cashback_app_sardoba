@@ -1,18 +1,18 @@
-import 'cashback_entry.dart';
+import 'points_entry.dart';
 import 'loyalty_summary.dart';
 
-class CashbackHistory {
-  const CashbackHistory({
+class PointsHistory {
+  const PointsHistory({
     required this.loyalty,
     required this.transactions,
   });
 
   final LoyaltySummary loyalty;
-  final List<CashbackEntry> transactions;
+  final List<PointsEntry> transactions;
 
-  factory CashbackHistory.fromJson(Map<String, dynamic>? json) {
+  factory PointsHistory.fromJson(Map<String, dynamic>? json) {
     if (json == null) {
-      return const CashbackHistory(
+      return const PointsHistory(
         loyalty: LoyaltySummary(),
         transactions: [],
       );
@@ -21,16 +21,16 @@ class CashbackHistory {
     final loyalty = LoyaltySummary.fromJson(
       (normalized['loyalty'] as Map?)?.cast<String, dynamic>(),
     );
-    final transactions = <CashbackEntry>[];
+    final transactions = <PointsEntry>[];
     final rawTransactions = normalized['transactions'];
     if (rawTransactions is List) {
       for (final item in rawTransactions.whereType<Map>()) {
         transactions.add(
-          CashbackEntry.fromJson(item.cast<String, dynamic>()),
+          PointsEntry.fromJson(item.cast<String, dynamic>()),
         );
       }
     }
-    return CashbackHistory(
+    return PointsHistory(
       loyalty: loyalty,
       transactions: transactions,
     );

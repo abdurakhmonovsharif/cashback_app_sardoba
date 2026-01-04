@@ -11,8 +11,8 @@ class RestaurantInfoBigCard extends StatelessWidget {
   final List<String> images, foodType;
   final String name;
   final double rating;
-  final int numOfRating, deliveryTime;
-  final bool isFreeDelivery;
+  final int numOfRating, readyTime;
+  final bool hasExtraPoints;
   final VoidCallback press;
 
   const RestaurantInfoBigCard({
@@ -20,8 +20,8 @@ class RestaurantInfoBigCard extends StatelessWidget {
     required this.name,
     required this.rating,
     required this.numOfRating,
-    required this.deliveryTime,
-    this.isFreeDelivery = true,
+    required this.readyTime,
+    this.hasExtraPoints = true,
     required this.images,
     required this.foodType,
     required this.press,
@@ -59,28 +59,24 @@ class RestaurantInfoBigCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                "$deliveryTime Min",
+                "$readyTime Min",
                 style: Theme.of(context).textTheme.labelSmall,
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: defaultPadding / 2),
                 child: SmallDot(),
               ),
-              SvgPicture.asset(
-                "assets/icons/delivery.svg",
-                height: 20,
-                width: 20,
-                colorFilter: ColorFilter.mode(
-                  Theme.of(context)
-                      .textTheme
-                      .bodyLarge!
-                      .color!
-                      .withValues(alpha: 0.5),
-                  BlendMode.srcIn,
-                ),
+              Icon(
+                Icons.loyalty,
+                size: 20,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodyLarge!
+                    .color!
+                    .withValues(alpha: 0.5),
               ),
               const SizedBox(width: 8),
-              Text(isFreeDelivery ? "Free" : "Paid",
+              Text(hasExtraPoints ? "Extra points" : "Standard",
                   style: Theme.of(context).textTheme.labelSmall),
             ],
           ),

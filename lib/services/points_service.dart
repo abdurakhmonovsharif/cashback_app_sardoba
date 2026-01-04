@@ -4,25 +4,25 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
-import '../models/cashback_history.dart';
+import '../models/points_history.dart';
 import 'auth_storage.dart';
 
-class CashbackService {
-  CashbackService({
+class PointsService {
+  PointsService({
     Dio? dio,
     String? baseUrl,
   })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
-  static const String _cashbackPath = '/api/v1/cashback/user';
+  static const String _pointsPath = '/api/v1/cashback/user';
 
   final Dio _dio;
   final bool _ownsDio;
 
-  final _cashbackController = StreamController<CashbackHistory>.broadcast();
-  Stream<CashbackHistory> get cashbackStream => _cashbackController.stream;
+  final _pointsController = StreamController<PointsHistory>.broadcast();
+  Stream<PointsHistory> get pointsStream => _pointsController.stream;
 
-  Future<CashbackHistory> fetchUserCashback({
+  Future<PointsHistory> fetchUserPoints({
     required int userId,
     String? accessToken,
     String? tokenType,
@@ -30,7 +30,7 @@ class CashbackService {
     final storage = AuthStorage.instance;
     final token = accessToken ?? await storage.getAccessToken();
     if (token == null || token.isEmpty) {
-      throw const CashbackServiceException('Not authenticated.');
+      throw const PointsServiceException('Not authenticated.');
     }
     String scheme = tokenType ?? await storage.getTokenType() ?? 'Bearer';
     scheme = scheme.trim();
@@ -40,7 +40,7 @@ class CashbackService {
 
     try {
       final response = await _dio.get(
-        '$_cashbackPath/$userId',
+        '$_pointsPath/$userId',
         options: Options(
           headers: {
             'Authorization': '$normalizedScheme $token',
@@ -52,23 +52,23 @@ class CashbackService {
         payload = jsonDecode(payload);
       }
       if (payload is! Map<String, dynamic>) {
-        throw const CashbackServiceException('Unexpected cashback payload.');
+        throw const PointsServiceException('Unexpected points payload.');
       }
-      final cashback = CashbackHistory.fromJson(payload);
-      _cashbackController.add(cashback);
-      return CashbackHistory.fromJson(payload);
+      final points = PointsHistory.fromJson(payload);
+      _pointsController.add(points);
+      return PointsHistory.fromJson(payload);
     } on DioException catch (error) {
       final status = error.response?.statusCode;
       if (status == 401) {
-        throw const CashbackUnauthorizedException('Unauthorized');
+        throw const PointsUnauthorizedException('Unauthorized');
       }
       final message = status != null
-          ? 'Failed to load cashback (status $status).'
-          : (error.message ?? 'Failed to load cashback.');
-      throw CashbackServiceException(message);
+          ? 'Failed to load points data (status $status).'
+          : (error.message ?? 'Failed to load points data.');
+      throw PointsServiceException(message);
     } on FormatException catch (error) {
-      throw CashbackServiceException(
-        'Failed to parse cashback entries. ${error.message}',
+      throw PointsServiceException(
+        'Failed to parse points entries. ${error.message}',
       );
     }
   }
@@ -80,15 +80,15 @@ class CashbackService {
   }
 }
 
-class CashbackServiceException implements Exception {
-  const CashbackServiceException(this.message);
+class PointsServiceException implements Exception {
+  const PointsServiceException(this.message);
 
   final String message;
 
   @override
-  String toString() => 'CashbackServiceException: $message';
+  String toString() => 'PointsServiceException: $message';
 }
 
-class CashbackUnauthorizedException extends CashbackServiceException {
-  const CashbackUnauthorizedException(super.message);
+class PointsUnauthorizedException extends PointsServiceException {
+  const PointsUnauthorizedException(super.message);
 }

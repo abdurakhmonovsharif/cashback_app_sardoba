@@ -11,13 +11,13 @@ class RestaurantInfoMediumCard extends StatelessWidget {
     required this.name,
     required this.location,
     required this.rating,
-    required this.delivertTime,
+    required this.readyTime,
     required this.press,
   });
 
   final String image, name, location;
   final double rating;
-  final int delivertTime;
+  final int readyTime;
   final VoidCallback press;
 
   @override
@@ -56,7 +56,7 @@ class RestaurantInfoMediumCard extends StatelessWidget {
               children: [
                 Rating(rating: rating),
                 Text(
-                  "$delivertTime min",
+                  "$readyTime min",
                   style: Theme.of(context)
                       .textTheme
                       .labelLarge!
@@ -64,7 +64,7 @@ class RestaurantInfoMediumCard extends StatelessWidget {
                 ),
                 const SmallDot(),
                 Text(
-                  "Free delivery",
+                  "Points",
                   style: Theme.of(context)
                       .textTheme
                       .labelMedium!

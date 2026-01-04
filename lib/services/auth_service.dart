@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../models/account.dart';
-import '../models/cashback_entry.dart';
+import '../models/points_entry.dart';
 import '../models/loyalty_summary.dart';
 import '../models/login_response.dart';
 
@@ -192,23 +192,23 @@ class AuthService {
           _asMap(root['client']) ??
           root;
       final profile = Map<String, dynamic>.from(profileMap);
-      final cashback = _asMap(root['cashback']);
-      if (cashback != null) {
-        final cashbackCopy = Map<String, dynamic>.from(cashback);
-        final transactions = _asList(cashback['transactions']);
+      final pointsPayload = _asMap(root['cashback']);
+      if (pointsPayload != null) {
+        final pointsCopy = Map<String, dynamic>.from(pointsPayload);
+        final transactions = _asList(pointsPayload['transactions']);
         if (transactions != null) {
-          cashbackCopy['transactions'] = transactions
+          pointsCopy['transactions'] = transactions
               .whereType<Map>()
               .map((e) => Map<String, dynamic>.from(e))
               .toList();
         }
-        profile['_cashback'] = cashbackCopy;
-        if (!profile.containsKey('cashback_balance')) {
-          profile['cashback_balance'] = _double(cashbackCopy['balance']) ??
-              _double(cashbackCopy['current_points']) ??
-              cashbackCopy['balance'];
+        profile['_points'] = pointsCopy;
+        if (!profile.containsKey('points_balance')) {
+          profile['points_balance'] = _double(pointsCopy['balance']) ??
+              _double(pointsCopy['current_points']) ??
+              pointsCopy['balance'];
         }
-        final loyalty = _asMap(cashbackCopy['loyalty']);
+        final loyalty = _asMap(pointsCopy['loyalty']);
         if (loyalty != null) {
           profile['_loyalty'] = loyalty;
         }
@@ -429,10 +429,13 @@ class AuthService {
         _string(source['referral_code']);
     final isVerified = (source['is_verified'] as bool?) ?? true;
     final id = _int(source['id']);
-    final cashbackMap = _asMap(source['_cashback']);
-    double? cashbackBalance = _double(source['cashback_balance']) ??
-        _double(cashbackMap?['balance']) ??
-        _double(cashbackMap?['current_points']);
+    final pointsMap =
+        _asMap(source['_points']) ?? _asMap(source['_cashback']);
+    double? pointsBalance = _double(source['points_balance']) ??
+        _double(source['pointsBalance']) ??
+        _double(source['cashback_balance']) ??
+        _double(pointsMap?['balance']) ??
+        _double(pointsMap?['current_points']);
     final dateOfBirth =
         _date(source['date_of_birth']) ?? _date(source['dateOfBirth']);
     final profilePhotoUrl = _resolveProfilePhotoUrl(
@@ -445,15 +448,16 @@ class AuthService {
     final loyalty = loyaltySummaryMap != null
         ? LoyaltySummary.fromJson(loyaltySummaryMap)
         : null;
-    final transactions = _asList(cashbackMap?['transactions']) ??
+    final transactions = _asList(pointsMap?['transactions']) ??
+        _asList(source['points_transactions']) ??
         _asList(source['cashback_transactions']);
-    final cashbackHistory = transactions
+    final pointsHistory = transactions
         ?.whereType<Map>()
-        .map((e) => CashbackEntry.fromJson(
+        .map((e) => PointsEntry.fromJson(
               Map<String, dynamic>.from(e),
             ))
         .toList();
-    final cards = _asList(cashbackMap?['cards']);
+    final cards = _asList(pointsMap?['cards']);
     final cardTracks = cards
         ?.expand((e) {
           if (e is String) return [e];
@@ -482,13 +486,13 @@ class AuthService {
       referralCode: referral,
       isVerified: isVerified,
       id: id,
-      cashbackBalance: cashbackBalance,
+      pointsBalance: pointsBalance,
       dateOfBirth: dateOfBirth,
       profilePhotoUrl: profilePhotoUrl,
       waiterId: waiterId,
       loyalty: loyalty,
       level: _string(source['level']) ?? loyalty?.level,
-      cashbackHistory: cashbackHistory,
+      pointsHistory: pointsHistory,
       cardTracks: cardTracks,
       giftget: giftget,
     );

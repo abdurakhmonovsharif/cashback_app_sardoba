@@ -126,7 +126,7 @@ class _BalanceSection extends StatelessWidget {
       children: [
         const _IconBadge(
           colors: [Color(0xFFB9F4D2), Color(0xFF7EE5AE)],
-          icon: Icons.account_balance_wallet_rounded,
+          icon: Icons.loyalty_rounded,
         ),
         const SizedBox(width: 14),
         Expanded(

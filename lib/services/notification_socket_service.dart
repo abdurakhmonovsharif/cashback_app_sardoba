@@ -5,7 +5,7 @@ import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:sardoba_app/services/cashback_service.dart';
+import 'package:sardoba_app/services/points_service.dart';
 import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -22,7 +22,7 @@ class NotificationSocketManager {
 
   static final NotificationSocketManager instance =
       NotificationSocketManager._();
-  final CashbackService cashbackService = CashbackService();
+  final PointsService pointsService = PointsService();
   final AuthStorage _storage = AuthStorage.instance;
   final PushNotificationManager _pushManager = PushNotificationManager.instance;
   final StreamController<AppNotification> _controller =
@@ -220,9 +220,9 @@ class NotificationSocketManager {
         payload: notification.id.toString(),
       );
       unawaited(
-        _refreshCashbackForCurrentUser().catchError((error) {
+        _refreshPointsForCurrentUser().catchError((error) {
           debugPrint(
-              '⚠️ Failed to refresh cashback after notification: $error');
+              '⚠️ Failed to refresh points after notification: $error');
         }),
       );
     } catch (error) {
@@ -230,19 +230,19 @@ class NotificationSocketManager {
     }
   }
 
-  Future<void> _refreshCashbackForCurrentUser() async {
+  Future<void> _refreshPointsForCurrentUser() async {
     final account = await _storage.getCurrentAccount();
     final userId = account?.id;
     if (account == null || userId == null) return;
-    final history = await cashbackService.fetchUserCashback(userId: userId);
-    double? updatedBalance = history.loyalty.cashbackBalance;
+    final history = await pointsService.fetchUserPoints(userId: userId);
+    double? updatedBalance = history.loyalty.pointsBalance;
     if (updatedBalance == null && history.transactions.isNotEmpty) {
       updatedBalance = history.transactions.first.balanceAfter;
     }
     final updatedAccount = account.copyWith(
-      cashbackHistory: history.transactions,
+      pointsHistory: history.transactions,
       loyalty: history.loyalty,
-      cashbackBalance: updatedBalance ?? account.cashbackBalance,
+      pointsBalance: updatedBalance ?? account.pointsBalance,
     );
     await _storage.updateCurrentAccount(updatedAccount);
   }

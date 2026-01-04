@@ -4,19 +4,19 @@ import '../../app_language.dart';
 import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../models/account.dart';
-import '../../models/cashback_entry.dart';
-import '../../models/cashback_history.dart';
+import '../../models/points_entry.dart';
+import '../../models/points_history.dart';
 import '../../models/loyalty_summary.dart';
 import '../../navigation/app_navigator.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_session_guard.dart';
 import '../../services/auth_storage.dart';
 import '../../services/branch_state.dart';
-import '../../services/cashback_service.dart';
+import '../../services/points_service.dart';
 import '../../utils/snackbar_utils.dart';
 
-class CashbackScreen extends StatefulWidget {
-  const CashbackScreen({
+class PointsScreen extends StatefulWidget {
+  const PointsScreen({
     super.key,
     this.account,
     required this.threshold,
@@ -28,24 +28,24 @@ class CashbackScreen extends StatefulWidget {
   final Account? account;
   final int threshold;
   final double? initialBalance;
-  final List<CashbackEntry>? initialEntries;
+  final List<PointsEntry>? initialEntries;
   final LoyaltySummary? initialLoyalty;
 
-  static const List<_CashbackHistoryEntry> _demoHistory = [
-    _CashbackHistoryEntry(
-      title: 'Сет из баклажан',
-      subtitle: 'Доставка • #A103',
+  static const List<_PointsHistoryEntry> _demoHistory = [
+    _PointsHistoryEntry(
+      title: 'Начисление баллов',
+      subtitle: 'QR скан',
       date: '12.09.2024',
       amount: 12000,
     ),
-    _CashbackHistoryEntry(
-      title: 'Combo Lunch',
-      subtitle: 'Hall • Чек #512',
+    _PointsHistoryEntry(
+      title: 'Баллы за визит',
+      subtitle: 'Филиал',
       date: '09.09.2024',
       amount: 8000,
     ),
-    _CashbackHistoryEntry(
-      title: 'Dessert Gift',
+    _PointsHistoryEntry(
+      title: 'Промо начисление',
       subtitle: 'Акция',
       date: '02.09.2024',
       amount: 5500,
@@ -54,11 +54,11 @@ class CashbackScreen extends StatefulWidget {
   ];
 
   @override
-  State<CashbackScreen> createState() => _CashbackScreenState();
+  State<PointsScreen> createState() => _PointsScreenState();
 }
 
-class _CashbackScreenState extends State<CashbackScreen> {
-  final CashbackService _cashbackService = CashbackService();
+class _PointsScreenState extends State<PointsScreen> {
+  final PointsService _pointsService = PointsService();
   final AuthStorage _storage = AuthStorage.instance;
   final BranchState _branchState = BranchState.instance;
 
@@ -67,7 +67,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
   double _balance = 0;
   bool _isLoading = true;
   String? _errorMessage;
-  List<CashbackEntry> _entries = const [];
+  List<PointsEntry> _entries = const [];
   bool _usingDemo = false;
 
   @override
@@ -77,7 +77,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
     _loyalty = widget.account?.loyalty ?? widget.initialLoyalty;
     _entries = widget.initialEntries ?? const [];
     _balance = widget.initialBalance ??
-        widget.account?.cashbackBalance ??
+        widget.account?.pointsBalance ??
         0.0;
     _isLoading = _entries.isEmpty;
     _usingDemo = _entries.isEmpty && widget.account == null;
@@ -86,7 +86,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
 
   @override
   void dispose() {
-    _cashbackService.dispose();
+    _pointsService.dispose();
     super.dispose();
   }
 
@@ -112,7 +112,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
           _loyalty = null;
           _balance = widget.initialBalance ?? 0;
           _isLoading = false;
-          _errorMessage = AppLocalizations.of(context).cashbackLoginRequired;
+          _errorMessage = AppLocalizations.of(context).pointsLoginRequired;
           _usingDemo = true;
         });
         return;
@@ -125,21 +125,21 @@ class _CashbackScreenState extends State<CashbackScreen> {
           _account = null;
           _entries = const [];
           _isLoading = false;
-          _errorMessage = AppLocalizations.of(context).cashbackLoginRequired;
+          _errorMessage = AppLocalizations.of(context).pointsLoginRequired;
           _usingDemo = true;
         });
         return;
       }
 
       if (!refresh &&
-          (resolvedAccount.cashbackHistory?.isNotEmpty ?? false) &&
+          (resolvedAccount.pointsHistory?.isNotEmpty ?? false) &&
           _entries.isEmpty) {
         if (!mounted) return;
         setState(() {
           _account = resolvedAccount;
-          _entries = resolvedAccount.cashbackHistory!;
+          _entries = resolvedAccount.pointsHistory!;
           _loyalty = resolvedAccount.loyalty ?? _loyalty;
-          _balance = resolvedAccount.cashbackBalance ??
+          _balance = resolvedAccount.pointsBalance ??
               _balance;
           _isLoading = false;
           _errorMessage = null;
@@ -154,7 +154,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
         _account = resolvedAccount;
         _entries = history.transactions;
         _loyalty = history.loyalty;
-        _balance = resolvedAccount.cashbackBalance ??
+        _balance = resolvedAccount.pointsBalance ??
             (history.transactions.isNotEmpty
                 ? history.transactions.first.balanceAfter
                 : _balance);
@@ -162,16 +162,16 @@ class _CashbackScreenState extends State<CashbackScreen> {
         _errorMessage = null;
         _usingDemo = false;
       });
-    } on CashbackUnauthorizedException {
+    } on PointsUnauthorizedException {
       await AppNavigator.forceLogout();
       if (!mounted) return;
       setState(() {
-        _errorMessage = AppLocalizations.of(context).cashbackLoginRequired;
+        _errorMessage = AppLocalizations.of(context).pointsLoginRequired;
         _isLoading = false;
         _usingDemo = true;
       });
       return;
-    } on CashbackServiceException catch (error) {
+    } on PointsServiceException catch (error) {
       if (!mounted) return;
       setState(() {
         _errorMessage = error.message;
@@ -247,55 +247,55 @@ class _CashbackScreenState extends State<CashbackScreen> {
     return fallback;
   }
 
-  Future<CashbackHistory> _fetchHistoryWithRefresh(int userId) async {
+  Future<PointsHistory> _fetchHistoryWithRefresh(int userId) async {
     try {
       final token = await _storage.getAccessToken();
       final tokenType = await _storage.getTokenType();
-      return await _cashbackService.fetchUserCashback(
+      return await _pointsService.fetchUserPoints(
         userId: userId,
         accessToken: token,
         tokenType: tokenType,
       );
-    } on CashbackUnauthorizedException {
+    } on PointsUnauthorizedException {
       if (await AuthSessionGuard.instance.logoutIfTokensMissing()) {
-        throw const CashbackUnauthorizedException('Unauthorized');
+        throw const PointsUnauthorizedException('Unauthorized');
       }
       final refreshed = await _storage.refreshTokens();
       if (!refreshed) {
         await AppNavigator.forceLogout();
-        throw const CashbackUnauthorizedException('Unauthorized');
+        throw const PointsUnauthorizedException('Unauthorized');
       }
       final token = await _storage.getAccessToken();
       final tokenType = await _storage.getTokenType();
       try {
-        return await _cashbackService.fetchUserCashback(
+        return await _pointsService.fetchUserPoints(
           userId: userId,
           accessToken: token,
           tokenType: tokenType,
         );
-      } on CashbackUnauthorizedException {
+      } on PointsUnauthorizedException {
         if (await AuthSessionGuard.instance.logoutIfTokensMissing()) {
-          throw const CashbackUnauthorizedException('Unauthorized');
+          throw const PointsUnauthorizedException('Unauthorized');
         }
         await AppNavigator.forceLogout();
-        throw const CashbackUnauthorizedException('Unauthorized');
+        throw const PointsUnauthorizedException('Unauthorized');
       }
     }
   }
 
-  Future<void> _handleRedeem(AppStrings l10n, bool canRedeem) async {
-    if (!canRedeem) return;
+  Future<void> _handleView(AppStrings l10n, bool canView) async {
+    if (!canView) return;
     if (!mounted) return;
     showNavAwareSnackBar(
       context,
-      content: Text(l10n.cashbackRedeemSuccess),
+      content: Text(l10n.pointsUpdatedSuccess),
     );
   }
 
   String _loyaltyHelper(AppStrings l10n) {
     final loyalty = _loyalty;
     if (_account == null || loyalty == null) {
-      return l10n.cashbackHelper;
+      return l10n.pointsHelper;
     }
     if (loyalty.isMaxLevel) {
       return l10n.loyaltyMaxLevelHelper;
@@ -303,7 +303,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
     final next = loyalty.nextLevel;
     final points = loyalty.pointsToNext;
     if (next == null || next.isEmpty || points == null) {
-      return l10n.cashbackHelper;
+      return l10n.pointsHelper;
     }
     return l10n.loyaltyPointsToNextHelper(
       _formatPoints(points),
@@ -333,7 +333,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
     final theme = Theme.of(context);
     final isRu = l10n.locale == AppLocale.ru;
     final balanceInt = _balance.round();
-    final canRedeem = balanceInt >= widget.threshold;
+    final canView = balanceInt >= widget.threshold;
 
     final body = _isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -348,19 +348,19 @@ class _CashbackScreenState extends State<CashbackScreen> {
                 32,
               ),
               children: [
-                _CashbackHero(
-                  title: l10n.cashbackTitle,
+                _PointsHero(
+                  title: l10n.pointsTitle,
                   balanceLabel: _formatCurrency(balanceInt, isRu),
                   helper: _loyaltyHelper(l10n),
-                  canRedeem: canRedeem,
-                  onRedeem: () => _handleRedeem(l10n, canRedeem),
-                  ctaLabel: canRedeem
-                      ? l10n.cashbackUseButton
-                      : l10n.cashbackUseLocked,
+                  canView: canView,
+                  onView: () => _handleView(l10n, canView),
+                  ctaLabel: canView
+                      ? l10n.pointsViewButton
+                      : l10n.pointsViewLocked,
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  l10n.cashbackHistoryTitle,
+                  l10n.pointsHistoryTitle,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     color: titleColor,
@@ -368,7 +368,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  l10n.cashbackScreenDescription,
+                  l10n.pointsScreenDescription,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: bodyTextColor,
                     height: 1.4,
@@ -383,7 +383,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
     return Scaffold(
       backgroundColor: screenBackgroundColor,
       appBar: AppBar(
-        title: Text(l10n.cashbackScreenTitle),
+        title: Text(l10n.pointsScreenTitle),
         centerTitle: true,
       ),
       body: body,
@@ -392,8 +392,8 @@ class _CashbackScreenState extends State<CashbackScreen> {
 
   Widget _buildHistorySection(AppStrings l10n, bool isRu) {
     if (_errorMessage != null) {
-      return _CashbackErrorCard(
-        message: l10n.cashbackHistoryLoadError,
+      return _PointsErrorCard(
+        message: l10n.pointsHistoryLoadError,
         details: _errorMessage!,
         onRetry: () => _loadData(refresh: true),
         retryLabel: l10n.catalogRetry,
@@ -404,10 +404,10 @@ class _CashbackScreenState extends State<CashbackScreen> {
         ? _entries
             .map((entry) => _mapEntryToHistory(entry, l10n, isRu))
             .toList()
-        : (_usingDemo ? CashbackScreen._demoHistory : const []);
+        : (_usingDemo ? PointsScreen._demoHistory : const []);
 
     if (entries.isEmpty) {
-      return _EmptyHistoryCard(message: l10n.cashbackHistoryEmpty);
+      return _EmptyHistoryCard(message: l10n.pointsHistoryEmpty);
     }
 
     return Column(
@@ -422,7 +422,7 @@ class _CashbackScreenState extends State<CashbackScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
-                l10n.cashbackHistoryDemoLabel,
+                l10n.pointsHistoryDemoLabel,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: primaryColor,
                       fontWeight: FontWeight.w600,
@@ -445,20 +445,22 @@ class _CashbackScreenState extends State<CashbackScreen> {
     );
   }
 
-  _CashbackHistoryEntry _mapEntryToHistory(
-    CashbackEntry entry,
+  _PointsHistoryEntry _mapEntryToHistory(
+    PointsEntry entry,
     AppStrings l10n,
     bool isRu,
   ) {
     final branchName = _branchNameForStore(entry.branchId);
     final isCredit = entry.amount >= 0;
     final title = isCredit
-        ? l10n.cashbackHistoryCredit
-        : l10n.cashbackHistoryDebit;
+        ? l10n.pointsHistoryAdded
+        : l10n.pointsHistorySpent;
     final dateText = _formatDate(entry.createdAt, isRu);
-    return _CashbackHistoryEntry(
+    final subtitle =
+        entry.source == PointsSource.visit ? l10n.pointsSourceVisit : branchName;
+    return _PointsHistoryEntry(
       title: title,
-      subtitle: branchName,
+      subtitle: subtitle,
       date: dateText,
       amount: entry.amount.round(),
       pending: false,
@@ -476,21 +478,21 @@ class _CashbackScreenState extends State<CashbackScreen> {
 
 }
 
-class _CashbackHero extends StatelessWidget {
-  const _CashbackHero({
+class _PointsHero extends StatelessWidget {
+  const _PointsHero({
     required this.title,
     required this.balanceLabel,
     required this.helper,
-    required this.canRedeem,
-    required this.onRedeem,
+    required this.canView,
+    required this.onView,
     required this.ctaLabel,
   });
 
   final String title;
   final String balanceLabel;
   final String helper;
-  final bool canRedeem;
-  final VoidCallback onRedeem;
+  final bool canView;
+  final VoidCallback onView;
   final String ctaLabel;
 
   @override
@@ -528,7 +530,7 @@ class _CashbackHero extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: const Icon(
-                  Icons.account_balance_wallet_rounded,
+                  Icons.loyalty_rounded,
                   color: primaryColor,
                   size: 30,
                 ),
@@ -568,10 +570,10 @@ class _CashbackHero extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: canRedeem ? onRedeem : null,
+              onPressed: canView ? onView : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor:
-                    canRedeem ? primaryColor : Colors.grey.shade400,
+                    canView ? primaryColor : Colors.grey.shade400,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -600,7 +602,7 @@ class _HistoryTile extends StatelessWidget {
     required this.l10n,
   });
 
-  final _CashbackHistoryEntry entry;
+  final _PointsHistoryEntry entry;
   final bool isRu;
   final AppStrings l10n;
 
@@ -656,7 +658,7 @@ class _HistoryTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  l10n.cashbackHistoryEarned(entry.subtitle),
+                  l10n.pointsHistoryEarned(entry.subtitle),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: bodyTextColor,
                   ),
@@ -689,12 +691,12 @@ class _HistoryTile extends StatelessWidget {
                   color: valueColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-            child: Text(
-              entry.pending
-                      ? l10n.cashbackStatusPending
+                child: Text(
+                  entry.pending
+                      ? l10n.pointsStatusPending
                       : (isPositive
-                          ? l10n.cashbackStatusCompleted
-                          : l10n.cashbackStatusPaid),
+                          ? l10n.pointsStatusCompleted
+                          : l10n.pointsStatusSpent),
                   style: theme.textTheme.labelSmall?.copyWith(
                     color: valueColor,
                     fontWeight: FontWeight.w600,
@@ -750,8 +752,8 @@ class _EmptyHistoryCard extends StatelessWidget {
   }
 }
 
-class _CashbackErrorCard extends StatelessWidget {
-  const _CashbackErrorCard({
+class _PointsErrorCard extends StatelessWidget {
+  const _PointsErrorCard({
     required this.message,
     required this.details,
     required this.onRetry,
@@ -807,8 +809,8 @@ class _CashbackErrorCard extends StatelessWidget {
   }
 }
 
-class _CashbackHistoryEntry {
-  const _CashbackHistoryEntry({
+class _PointsHistoryEntry {
+  const _PointsHistoryEntry({
     required this.title,
     required this.subtitle,
     required this.date,
@@ -833,7 +835,7 @@ String _formatCurrency(int value, bool isRu) {
     count++;
   }
   final formatted = buffer.toString().split('').reversed.join();
-  final suffix = isRu ? 'сум' : 'soʻm';
+  final suffix = isRu ? 'балл' : 'ball';
   return '$formatted $suffix';
 }
 

@@ -1,19 +1,21 @@
-# Sardoba Restaurant App UI Kit
+# Sardoba Points & Catalog App UI Kit
 
 Sardoba is a Flutter UI starter for restaurant brands who want to launch a
-branch-based mobile experience fast. The kit ships with branch catalogs, menu
-exploration per location, dynamic promotions, and a cashback rewards flow that
-keeps diners engaged without having to build the core UX from scratch.
+branch-based loyalty and catalog experience fast. The kit ships with branch
+catalogs, promotions, QR identification, and a points balance/history flow
+that keeps guests engaged without handling payments inside the app.
 
 ## Highlights
+
 - Branch directory with location details powered by Yandex MapKit
-- Menu layouts scoped per branch, including rich imagery and pricing states
-- Cashback wallet module for earning, tracking, and redeeming rewards
+- Catalog layouts scoped per branch, including rich imagery and availability states
+- Points wallet module for tracking balances and history
 - Campaign banners and promo callouts that surface timely offers
 - Skeleton loading states, light/dark theming, and localization scaffolding
 - Fully responsive Flutter UI components for Android and iOS
 
 ## Tech Stack
+
 - Flutter 3.5+ and Dart 3
 - `flutter_svg` for vector assets and iconography
 - `shared_preferences` for local caching and session state
@@ -21,13 +23,15 @@ keeps diners engaged without having to build the core UX from scratch.
 - `form_field_validator`, `crypto`, `url_launcher`, and dart-define driven configs
 
 ## Project Structure
-- `lib/screens` – page layouts such as branch lists, menus, auth, and loyalty
+
+- `lib/screens` – page layouts such as branch lists, catalogs, auth, and loyalty
 - `lib/components` – reusable widgets (cards, headers, progress indicators)
-- `lib/models` – data models for branches, menu items, and loyalty balances
+- `lib/models` – data models for branches, catalog items, and loyalty balances
 - `lib/services` – integrations and helpers (API, storage, localization)
 - `assets/` – illustrations, icons, and branding resources bundled in the app
 
 ## Getting Started
+
 1. Install Flutter 3.5 or newer and the associated platform toolchains.
 2. Clone the repository and fetch packages:
    ```bash
@@ -42,9 +46,9 @@ keeps diners engaged without having to build the core UX from scratch.
 
 ### Environment reference
 
-| Key | Description |
-| --- | --- |
-| `API_BASE_URL` | Base URL for all REST services (Auth, Catalog, Cashback, etc). |
+| Key                     | Description                                                               |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `API_BASE_URL`          | Base URL for all REST services (Auth, Catalog, Points, etc).              |
 | `YANDEX_MAPKIT_API_KEY` | Native Yandex MapKit SDK key used by both Android and iOS bootstrap code. |
 
 ### Example run/build with dart-define
@@ -92,81 +96,81 @@ The app now relies on a WebSocket+local-notification stack (see
    `NotificationService.fetchNotifications()` (`GET /api/v1/notifications/me`)
    still provides the history that powers the “Bell” screen (`lib/screens/notifications/notifications_screen.dart`).
 
-## Cashback & loyalty data
+## Points & loyalty data
 
-The app now relies on the refreshed `/api/v1/cashback/user/{user_id}` payload
-that includes both `loyalty` summary information and the `transactions`
-history needed to render the cashback cards, balances, and level progress
-indicators. The response looks like this:
+The app relies on the refreshed `/api/v1/cashback/user/{user_id}` payload
+(legacy endpoint naming) that includes both `loyalty` summary information and
+the `transactions` history needed to render the points cards, balances, and
+level progress indicators. The response looks like this:
 
 ```json
 {
-  "loyalty": {
-    "level": "Gold",
-    "cashback_balance": 2700,
-    "points_total": 4200,
-    "current_level_points": 1300,
-    "current_level_min_points": 1000,
-    "current_level_max_points": 2000,
-    "next_level": "Platinum",
-    "next_level_required_points": 2000,
-    "points_to_next_level": 700,
-    "is_max_level": false,
-    "cashback_percent": 5,
-    "next_level_cashback_percent": 7
-  },
-  "transactions": [
-    {
-      "id": 1,
-      "user_id": 123,
-      "amount": 12000,
-      "balance_after": 1200,
-      "created_at": "2024-09-12T12:34:56Z",
-      "branch_id": 139235,
-      "source": "ORDER",
-      "staff_id": null
-    }
-  ]
+	"loyalty": {
+		"level": "Gold",
+		"points_balance": 2700,
+		"points_total": 4200,
+		"current_level_points": 1300,
+		"current_level_min_points": 1000,
+		"current_level_max_points": 2000,
+		"next_level": "Platinum",
+		"next_level_required_points": 2000,
+		"points_to_next_level": 700,
+		"is_max_level": false,
+		"points_percent": 5,
+		"next_level_points_percent": 7
+	},
+	"transactions": [
+		{
+			"id": 1,
+			"user_id": 123,
+			"amount": 12000,
+			"balance_after": 1200,
+			"created_at": "2024-09-12T12:34:56Z",
+			"branch_id": 139235,
+			"source": "QR",
+			"staff_id": null
+		}
+	]
 }
 ```
 
-`CashbackService.fetchUserCashback` now returns that structure
-(see `lib/models/cashback_history.dart`), so the UI cards stay in sync with the
-backend-provided `cashback_balance`, `current_level_points`, `points_to_next`,
-and other level-related stats. If the backend needs to redeem points, call
-`POST /api/v1/cashback/use` with `user_id`/`amount`. These endpoints and the
+`PointsService.fetchUserPoints` now returns that structure
+(see `lib/models/points_history.dart`), so the UI cards stay in sync with the
+backend-provided points balance, level progress, and history. The endpoints and
 schema are captured in the latest `openapi.json`.
 
 ## Customization Tips
+
 - Update the color system and typography in `lib/theme.dart` to match branding.
 - Seed demo content and loyalty scenarios via `lib/demo_data.dart`.
 - Extend localization strings in `lib/app_localizations.dart` and regenerate
   translations as needed.
 
 ## Screenshots
+
 Add your own mockups or device captures to the `assets/branding/` directory and
 reference them here once available.
 
 ## License
+
 Provide license details or usage terms here if you are distributing the kit
 beyond internal teams.
-# sardoba_cashback
 
+# sardoba_points
 
 # run with details
 
 flutter clean
 flutter pub get
 flutter build appbundle --release \
-  --dart-define=APP_NAME=Sardoba \
-  --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
-  --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40
+ --dart-define=APP_NAME=Sardoba \
+ --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
+ --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40
 
 flutter run --dart-define=APP_NAME=Sardoba \
-  --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
-  --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40
+ --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
+ --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40
 
-
-  flutter run --profile --dart-define=APP_NAME=Sardoba \
-  --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
-  --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40
+flutter run --profile --dart-define=APP_NAME=Sardoba \
+ --dart-define=API_BASE_URL=https://api.sardobacashback.uz \
+ --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40

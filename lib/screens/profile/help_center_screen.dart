@@ -82,7 +82,16 @@ class HelpCenterScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.helpCenterDisclaimer,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: bodyTextColor,
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   _SupportLanguageBlock(
                     title: l10n.helpCenterCallTitle,
                     description: l10n.helpCenterCallDescription,

@@ -9,9 +9,9 @@ class LoyaltySummary {
     this.nextLevelPoints,
     this.pointsToNext,
     this.isMaxLevel = false,
-    this.cashbackPercent,
-    this.nextLevelCashbackPercent,
-    this.cashbackBalance,
+    this.pointsPercent,
+    this.nextLevelPointsPercent,
+    this.pointsBalance,
   });
 
   final String? level;
@@ -23,9 +23,9 @@ class LoyaltySummary {
   final double? nextLevelPoints;
   final double? pointsToNext;
   final bool isMaxLevel;
-  final double? cashbackPercent;
-  final double? nextLevelCashbackPercent;
-  final double? cashbackBalance;
+  final double? pointsPercent;
+  final double? nextLevelPointsPercent;
+  final double? pointsBalance;
 
   factory LoyaltySummary.fromJson(Map<String, dynamic>? json) {
     if (json == null) return const LoyaltySummary();
@@ -57,10 +57,12 @@ class LoyaltySummary {
         ['points_to_next', 'points_to_next_level'],
       ),
       isMaxLevel: json['is_max_level'] as bool? ?? false,
-      cashbackPercent: _firstDouble(json, ['cashback_percent']),
-      nextLevelCashbackPercent:
-          _firstDouble(json, ['next_level_cashback_percent']),
-      cashbackBalance: _firstDouble(json, ['cashback_balance']),
+      pointsPercent: _firstDouble(json, ['points_percent', 'cashback_percent']),
+      nextLevelPointsPercent: _firstDouble(
+        json,
+        ['next_level_points_percent', 'next_level_cashback_percent'],
+      ),
+      pointsBalance: _firstDouble(json, ['points_balance', 'cashback_balance']),
     );
   }
 
@@ -74,9 +76,9 @@ class LoyaltySummary {
     double? nextLevelPoints,
     double? pointsToNext,
     bool? isMaxLevel,
-    double? cashbackPercent,
-    double? nextLevelCashbackPercent,
-    double? cashbackBalance,
+    double? pointsPercent,
+    double? nextLevelPointsPercent,
+    double? pointsBalance,
   }) {
     return LoyaltySummary(
       level: level ?? this.level,
@@ -88,10 +90,10 @@ class LoyaltySummary {
       nextLevelPoints: nextLevelPoints ?? this.nextLevelPoints,
       pointsToNext: pointsToNext ?? this.pointsToNext,
       isMaxLevel: isMaxLevel ?? this.isMaxLevel,
-      cashbackPercent: cashbackPercent ?? this.cashbackPercent,
-      nextLevelCashbackPercent:
-          nextLevelCashbackPercent ?? this.nextLevelCashbackPercent,
-      cashbackBalance: cashbackBalance ?? this.cashbackBalance,
+      pointsPercent: pointsPercent ?? this.pointsPercent,
+      nextLevelPointsPercent:
+          nextLevelPointsPercent ?? this.nextLevelPointsPercent,
+      pointsBalance: pointsBalance ?? this.pointsBalance,
     );
   }
 
@@ -106,9 +108,9 @@ class LoyaltySummary {
       'next_level_points': nextLevelPoints,
       'points_to_next': pointsToNext,
       'is_max_level': isMaxLevel,
-      'cashback_percent': cashbackPercent,
-      'next_level_cashback_percent': nextLevelCashbackPercent,
-      'cashback_balance': cashbackBalance,
+      'points_percent': pointsPercent,
+      'next_level_points_percent': nextLevelPointsPercent,
+      'points_balance': pointsBalance,
     };
   }
 

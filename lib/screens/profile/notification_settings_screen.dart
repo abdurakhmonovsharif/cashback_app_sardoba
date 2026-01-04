@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../services/notification_preferences.dart';
 
@@ -43,6 +44,7 @@ class _NotificationSettingsScreenState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: screenBackgroundColor,
       appBar: AppBar(
@@ -50,7 +52,7 @@ class _NotificationSettingsScreenState
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Notifications',
+          l10n.notificationsTitle,
           style: theme.textTheme.titleLarge?.copyWith(
             color: titleColor,
             fontWeight: FontWeight.w700,
@@ -72,26 +74,23 @@ class _NotificationSettingsScreenState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _NotificationCard(
-                      title: 'Channels',
+                      title: l10n.notificationSettingsChannelsTitle,
                       children: [
                         _NotificationToggleTile(
-                          label: 'Push notifications',
-                          description:
-                              'Order status, loyalty updates and special alerts.',
+                          label: l10n.notificationSettingsPushTitle,
+                          description: l10n.notificationSettingsPushDescription,
                           value: _prefs.pushEnabled,
                           onChanged: _prefs.setPushEnabled,
                         ),
                         _NotificationToggleTile(
-                          label: 'SMS messages',
-                          description:
-                              'Receive text messages for delivery updates.',
+                          label: l10n.notificationSettingsSmsTitle,
+                          description: l10n.notificationSettingsSmsDescription,
                           value: _prefs.smsEnabled,
                           onChanged: _prefs.setSmsEnabled,
                         ),
                         _NotificationToggleTile(
-                          label: 'Email',
-                          description:
-                              'Monthly statements, receipts and newsletters.',
+                          label: l10n.notificationSettingsEmailTitle,
+                          description: l10n.notificationSettingsEmailDescription,
                           value: _prefs.emailEnabled,
                           onChanged: _prefs.setEmailEnabled,
                         ),
@@ -99,19 +98,18 @@ class _NotificationSettingsScreenState
                     ),
                     const SizedBox(height: 24),
                     _NotificationCard(
-                      title: 'Preferences',
+                      title: l10n.notificationSettingsPreferencesTitle,
                       children: [
                         _NotificationToggleTile(
-                          label: 'Order updates',
-                          description:
-                              'Be notified about order progress and couriers.',
-                          value: _prefs.orderUpdates,
-                          onChanged: _prefs.setOrderUpdates,
+                          label: l10n.notificationSettingsPointsTitle,
+                          description: l10n.notificationSettingsPointsDescription,
+                          value: _prefs.pointsUpdates,
+                          onChanged: _prefs.setPointsUpdates,
                         ),
                         _NotificationToggleTile(
-                          label: 'Promotions',
+                          label: l10n.notificationSettingsPromotionsTitle,
                           description:
-                              'Get personalised offers, discounts and events.',
+                              l10n.notificationSettingsPromotionsDescription,
                           value: _prefs.promotions,
                           onChanged: _prefs.setPromotions,
                         ),

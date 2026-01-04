@@ -10,7 +10,7 @@ class NotificationPreferences extends ChangeNotifier {
   static const _pushKey = 'notifications_push';
   static const _smsKey = 'notifications_sms';
   static const _emailKey = 'notifications_email';
-  static const _orderKey = 'notifications_order_updates';
+  static const _pointsKey = 'notifications_points_updates';
   static const _promotionsKey = 'notifications_promotions';
 
   SharedPreferences? _prefs;
@@ -19,7 +19,7 @@ class NotificationPreferences extends ChangeNotifier {
   bool _pushEnabled = true;
   bool _smsEnabled = false;
   bool _emailEnabled = false;
-  bool _orderUpdates = true;
+  bool _pointsUpdates = true;
   bool _promotions = true;
 
   Future<void> ensureInitialized() async {
@@ -28,7 +28,7 @@ class NotificationPreferences extends ChangeNotifier {
     _pushEnabled = _prefs!.getBool(_pushKey) ?? true;
     _smsEnabled = _prefs!.getBool(_smsKey) ?? false;
     _emailEnabled = _prefs!.getBool(_emailKey) ?? false;
-    _orderUpdates = _prefs!.getBool(_orderKey) ?? true;
+    _pointsUpdates = _prefs!.getBool(_pointsKey) ?? true;
     _promotions = _prefs!.getBool(_promotionsKey) ?? true;
     _initialized = true;
     notifyListeners();
@@ -37,7 +37,7 @@ class NotificationPreferences extends ChangeNotifier {
   bool get pushEnabled => _pushEnabled;
   bool get smsEnabled => _smsEnabled;
   bool get emailEnabled => _emailEnabled;
-  bool get orderUpdates => _orderUpdates;
+  bool get pointsUpdates => _pointsUpdates;
   bool get promotions => _promotions;
 
   Future<void> setPushEnabled(bool value) async {
@@ -52,8 +52,8 @@ class NotificationPreferences extends ChangeNotifier {
     await _setValue(_emailKey, value, () => _emailEnabled = value);
   }
 
-  Future<void> setOrderUpdates(bool value) async {
-    await _setValue(_orderKey, value, () => _orderUpdates = value);
+  Future<void> setPointsUpdates(bool value) async {
+    await _setValue(_pointsKey, value, () => _pointsUpdates = value);
   }
 
   Future<void> setPromotions(bool value) async {

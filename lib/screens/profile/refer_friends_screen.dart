@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../models/account.dart';
 import '../../services/auth_storage.dart';
@@ -31,9 +32,10 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
   Future<void> _copyCode(String code) async {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     showNavAwareSnackBar(
       context,
-      content: const Text('Referral code copied'),
+      content: Text(l10n.referFriendsCopied),
     );
   }
 
@@ -49,9 +51,10 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
       _referralCode = code;
       _isGenerating = false;
     });
+    final l10n = AppLocalizations.of(context);
     showNavAwareSnackBar(
       context,
-      content: const Text('Referral code generated'),
+      content: Text(l10n.referFriendsGenerated),
     );
   }
 
@@ -68,6 +71,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final code = _referralCode;
     final canGenerate = _account != null && _account!.phone.isNotEmpty;
 
@@ -78,7 +82,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          'Refer & earn',
+          l10n.referFriendsTitle,
           style: theme.textTheme.titleLarge?.copyWith(
             color: titleColor,
             fontWeight: FontWeight.w700,
@@ -133,7 +137,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: Text(
-                            'Share Sardoba with friends and both of you receive 10 000 soʻm bonus after the first order.',
+                            l10n.referFriendsIntro,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: titleColor,
                               height: 1.4,
@@ -153,7 +157,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
-                            'Generate your referral code to get started.',
+                            l10n.referFriendsGenerateHint,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: bodyTextColor,
@@ -184,7 +188,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
                                     child:
                                         CircularProgressIndicator(strokeWidth: 2),
                                   )
-                                : const Text('Generate code'),
+                                : Text(l10n.referFriendsGenerateButton),
                           ),
                         ],
                       ),
@@ -192,7 +196,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              _BenefitsCard(theme: theme),
+              _BenefitsCard(theme: theme, l10n: l10n),
             ],
           ),
         ),
@@ -213,6 +217,7 @@ class _ReferralCodeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
@@ -227,7 +232,7 @@ class _ReferralCodeBlock extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Your referral code',
+            l10n.referFriendsCodeTitle,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: Colors.white.withValues(alpha: 0.85),
               fontWeight: FontWeight.w600,
@@ -268,9 +273,10 @@ class _ReferralCodeBlock extends StatelessWidget {
 }
 
 class _BenefitsCard extends StatelessWidget {
-  const _BenefitsCard({required this.theme});
+  const _BenefitsCard({required this.theme, required this.l10n});
 
   final ThemeData theme;
+  final AppStrings l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -291,32 +297,29 @@ class _BenefitsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'How it works',
+            l10n.referFriendsHowItWorksTitle,
             style: theme.textTheme.titleMedium?.copyWith(
               color: titleColor,
               fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 18),
-          const _BenefitStep(
+          _BenefitStep(
             index: 1,
-            title: 'Share your code',
-            description:
-                'Send the referral link or code to friends through any messenger.',
+            title: l10n.referFriendsStep1Title,
+            description: l10n.referFriendsStep1Description,
           ),
           const SizedBox(height: 14),
-          const _BenefitStep(
+          _BenefitStep(
             index: 2,
-            title: 'Friend places first order',
-            description:
-                'Once their order is completed, you both earn a 10 000 soʻm bonus.',
+            title: l10n.referFriendsStep2Title,
+            description: l10n.referFriendsStep2Description,
           ),
           const SizedBox(height: 14),
-          const _BenefitStep(
+          _BenefitStep(
             index: 3,
-            title: 'Bonus unlocks automatically',
-            description:
-                'Use the bonus on your next order directly at checkout.',
+            title: l10n.referFriendsStep3Title,
+            description: l10n.referFriendsStep3Description,
           ),
         ],
       ),

@@ -1,0 +1,7 @@
+{
+    "builder.serverUrl": "",
+    "builder.command": "flutter run --dart-define=APP_NAME=Sardoba \\\n --dart-define=API_BASE_URL=https://api.sardobacashback.uz \\\n --dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40",
+    "builder.runDevServer": true,
+    "builder.autoDetectDevServer": true,
+    "builder.launchType": "editor"
+}

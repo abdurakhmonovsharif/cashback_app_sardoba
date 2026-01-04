@@ -62,20 +62,21 @@ class AppStrings {
   String get changeBranch => _isRu ? 'Сменить филиал' : 'Filialni tanlang';
   String get changeBranchSubtitle => _isRu ? 'Рядом с вами' : 'Sizga yaqin joy';
   String get searchHint => _isRu ? 'Поиск' : 'Izlash';
-  String get loyaltyTitle => _isRu ? 'Моя карта' : 'Mening kartam';
+  String get loyaltyTitle =>
+      _isRu ? 'Баллы' : 'Ballar';
   String get offersTitle => _isRu ? 'Предложения' : 'Takliflar';
-  String get cashbackTitle => _isRu ? 'Баланс кешбэка' : 'Keshbek balansi';
-  String get cashbackHelper => _isRu
-      ? 'Можно использовать при 30 000 сум'
-      : '30 000 soʻmdan keyin ishlata olasiz';
+  String get pointsTitle => _isRu ? 'Количество баллов' : 'Ballar soni';
+  String get pointsHelper => _isRu
+      ? 'Доступно после 30 000 баллов'
+      : '30 000 balldan keyin foydalanish mumkin';
   String get membershipTitle => _isRu ? 'Уровень клуба' : 'Klub darajasi';
   String get membershipHelper => _isRu
       ? 'До золота осталось 3 000 баллов'
       : 'Gold darajasi uchun 3 000 ball qolgan';
   String get clubLevelScreenTitle => _isRu ? 'Уровень клуба' : 'Klub darajasi';
   String get clubLevelScreenDescription => _isRu
-      ? 'Это демо-информация об уровнях. Собирайте баллы за каждую покупку и открывайте больше привилегий.'
-      : 'Bu darajalar uchun demo maʼlumot. Har bir xaridda ball yigʻing va ko‘proq imtiyozlarni oching.';
+      ? 'Это демо-информация об уровнях. Собирайте баллы и открывайте больше привилегий.'
+      : 'Bu darajalar uchun demo maʼlumot. Ball yigʻing va ko‘proq imtiyozlarni oching.';
   String get clubLevelCurrentLabel => _isRu ? 'Текущий балл' : 'Joriy ball';
   String get clubLevelNextLabel =>
       _isRu ? 'До следующего уровня' : 'Keyingi darajagacha';
@@ -84,31 +85,31 @@ class AppStrings {
   String get clubLevelBenefitsTitle =>
       _isRu ? 'Преимущества уровня' : 'Daraja imtiyozlari';
   String get clubLevelBenefitPriority =>
-      _isRu ? 'Приоритетная доставка' : 'Ustuvor yetkazib berish';
+      _isRu ? 'Приоритетное обслуживание' : 'Ustuvor xizmat';
   String get clubLevelBenefitPriorityDesc => _isRu
-      ? 'Заказы обрабатываются быстрее и без очереди.'
-      : 'Buyurtmalar navbatsiz va tezroq tayyorlanadi.';
+      ? 'Обслуживание быстрее и без очереди.'
+      : 'Xizmat ko‘rsatish navbatsiz va tezroq.';
   String get clubLevelBenefitBirthday =>
       _isRu ? 'Подарок на день рождения' : 'Tug‘ilgan kun sovg‘asi';
   String get clubLevelBenefitBirthdayDesc => _isRu
       ? 'Персональный десерт и промокод в вашу неделю.'
       : 'Sizning haftangizda shaxsiy desert va promo kod.';
   String get clubLevelBenefitDiscount =>
-      _isRu ? 'Скидка 5% на всё меню' : 'Menyu bo‘yicha 5% chegirma';
+      _isRu ? '5% бонусных баллов' : '5% qo‘shimcha ball';
   String get clubLevelBenefitDiscountDesc => _isRu
-      ? 'Постоянная скидка при заказе в приложении.'
-      : 'Ilova orqali buyurtma qilganda doimiy chegirma.';
+      ? 'Получайте на 5% больше баллов за каждое начисление.'
+      : 'Har bir ball qo‘shishda 5% ko‘proq ball oling.';
   String get notificationsTitle => _isRu ? 'Уведомления' : 'Bildirishnomalar';
   String get notificationsEmpty =>
       _isRu ? 'Новых уведомлений нет' : 'Yangi bildirishnoma yoʻq';
   String get birthdayOfferTitle =>
       _isRu ? 'С днём рождения!' : 'Tugʻilgan kun muborak!';
   String get birthdayOfferBody => _isRu
-      ? 'Празднуйте у нас и получите скидку 15% на всё меню до конца недели.'
-      : 'Biz bilan bayram qiling va hafta oxirigacha barcha menyuga 15% chegirma oling.';
+      ? 'Празднуйте у нас и получите +15% баллов до конца недели.'
+      : 'Biz bilan bayram qiling va hafta oxirigacha +15% ko‘proq ball oling.';
   String get doublePointsBody => _isRu
-      ? 'Собирайте двойные баллы за каждую доставку сегодня.'
-      : 'Bugun har bir yetkazib berishda ikki baravar koʻp ball toʻplang.';
+      ? 'Сегодня получайте двойные баллы за каждое начисление.'
+      : 'Bugun har bir ball qo‘shishda ikki baravar ko‘p ball oling.';
   String get cheesecakeBannerTitle => _isRu
       ? 'Подарок за регистрацию!'
       : 'Ro‘yxatdan o‘tganingiz uchun sovg‘a!';
@@ -123,42 +124,44 @@ class AppStrings {
   String get cheesecakeSheetDescription => _isRu
       ? 'Покажите QR на кассе чтобы получить десерт.'
       : 'QRni kassaga ko‘rsating va desertni oling.';
-  String get cashbackButtonCta => _isRu ? 'Подробнее' : 'Batafsil';
-  String get cashbackScreenTitle => _isRu ? 'Кешбэк' : 'Keshbek';
-  String get cashbackScreenDescription => _isRu
-      ? 'Следите за начислениями и используйте кешбэк в любое время.'
-      : 'Keshbek harakatlarini kuzating va istalgan payt foydalaning.';
-  String get cashbackUseButton =>
-      _isRu ? 'Использовать кешбэк' : 'Keshbekni ishlatish';
-  String get cashbackUseLocked => _isRu ? 'Недоступно' : 'Mavjud emas';
-  String get cashbackHistoryTitle =>
-      _isRu ? 'История начислений' : 'Keshbek tarixi';
-  String get cashbackHistoryDemoLabel =>
+  String get pointsButtonCta => _isRu ? 'Подробнее' : 'Batafsil';
+  String get pointsScreenTitle => _isRu ? 'Баллы' : 'Ballar';
+  String get pointsScreenDescription => _isRu
+      ? 'Следите за количеством баллов и историей.'
+      : 'Ballar soni va tarixini kuzating.';
+  String get pointsViewButton =>
+      _isRu ? 'Посмотреть' : 'Ko‘rish';
+  String get pointsViewLocked => _isRu ? 'Недоступно' : 'Mavjud emas';
+  String get pointsHistoryTitle =>
+      _isRu ? 'История баллов' : 'Ballar tarixi';
+  String get pointsHistoryDemoLabel =>
       _isRu ? 'Демо операции' : 'Demo operatsiyalar';
-  String get cashbackHistoryEmpty =>
+  String get pointsHistoryEmpty =>
       _isRu ? 'История пока пуста' : 'Tarix hozircha bo‘sh';
-  String get cashbackHistoryLoadError => _isRu
-      ? 'Не удалось загрузить историю кешбэка.'
-      : 'Keshbek tarixini yuklab boʻlmadi.';
-  String cashbackHistoryEarned(String label) =>
+  String get pointsHistoryLoadError => _isRu
+      ? 'Не удалось загрузить историю баллов.'
+      : 'Ballar tarixini yuklab boʻlmadi.';
+  String pointsHistoryEarned(String label) =>
       _isRu ? 'Начислено за $label' : '$label uchun qo‘shildi';
-  String get cashbackRedeemSuccess =>
-      _isRu ? 'Кешбэк применён' : 'Keshbek qo‘llandi';
-  String get cashbackStatusPending => _isRu ? 'В ожидании' : 'Kutilmoqda';
-  String get cashbackStatusCompleted => _isRu ? 'Зачислено' : 'Qoʻshildi';
-  String get cashbackStatusPaid => _isRu ? 'Оплачено' : 'Toʻlandi';
-  String get cashbackLoginRequired => _isRu
-      ? 'Авторизуйтесь, чтобы увидеть кешбэк.'
-      : 'Keshbekni ko‘rish uchun tizimga kiring.';
-  String get cashbackSourceQr => _isRu ? 'Скан QR' : 'QR orqali';
-  String get cashbackSourceOrder =>
-      _isRu ? 'Заказ в ресторане' : 'Restorandagi buyurtma';
-  String get cashbackSourceManual =>
+  String get pointsUpdatedSuccess =>
+      _isRu ? 'Баллы обновлены' : 'Ballar yangilandi';
+  String get pointsStatusPending => _isRu ? 'В ожидании' : 'Kutilmoqda';
+  String get pointsStatusCompleted => _isRu ? 'Зачислено' : 'Qoʻshildi';
+  String get pointsStatusSpent => _isRu ? 'Списано' : 'Sarflandi';
+  String get pointsLoginRequired => _isRu
+      ? 'Авторизуйтесь, чтобы увидеть баллы.'
+      : 'Ballarni ko‘rish uchun tizimga kiring.';
+  String get pointsSourceQr => _isRu ? 'Скан QR' : 'QR orqali';
+  String get pointsSourceBranch =>
+      _isRu ? 'Начисление в филиале' : 'Filialda qo‘shildi';
+  String get pointsSourceManual =>
       _isRu ? 'Ручное начисление' : 'Qoʻlda qoʻshish';
-  String get cashbackSourceUnknown => _isRu ? 'Начисление' : 'Qoʻshildi';
+  String get pointsSourceVisit =>
+      _isRu ? 'Посещение / лояльность' : 'Tashrif / sodiqlik';
+  String get pointsSourceUnknown => _isRu ? 'Начисление' : 'Qoʻshildi';
 
-  String get cashbackHistoryCredit => _isRu ? 'Зачислено' : 'Qoʻshildi';
-  String get cashbackHistoryDebit => _isRu ? 'Оплачено' : 'Toʻlandi';
+  String get pointsHistoryAdded => _isRu ? 'Зачислено' : 'Qoʻshildi';
+  String get pointsHistorySpent => _isRu ? 'Списано' : 'Sarflandi';
 
   String get languageSheetTitle => _isRu ? 'Выберите язык' : 'Tilni tanlang';
   String get commonCancel => _isRu ? 'Отмена' : 'Bekor qilish';
@@ -252,8 +255,8 @@ class AppStrings {
   String get profileReferMenuTitle =>
       _isRu ? 'Пригласить друзей' : 'Doʻstlarni taklif qilish';
   String get profileReferMenuSubtitle => _isRu
-      ? 'Получайте бонусы за приглашения'
-      : 'Takliflar evaziga bonus oling';
+      ? 'Получайте баллы за приглашения'
+      : 'Takliflar evaziga ball oling';
   String loyaltyNextLevelLabel(String level) =>
       _isRu ? 'Следующий уровень: $level' : 'Keyingi daraja: $level';
   String loyaltyPointsToNextHelper(String points, String level) => _isRu
@@ -275,6 +278,74 @@ class AppStrings {
   String get helpCenterCallError => _isRu
       ? 'Не удалось начать звонок'
       : 'Qo‘ng‘iroqni amalga oshirib bo‘lmadi';
+  String get helpCenterDisclaimer => _isRu
+      ? 'Приложение не является финансовым сервисом; здесь отображаются только баллы лояльности.'
+      : 'Ilova moliyaviy xizmat emas; unda faqat sodiqlik ballari ko‘rsatiladi.';
+
+  // Notification settings
+  String get notificationSettingsChannelsTitle =>
+      _isRu ? 'Каналы' : 'Kanallar';
+  String get notificationSettingsPreferencesTitle =>
+      _isRu ? 'Настройки' : 'Sozlamalar';
+  String get notificationSettingsPushTitle =>
+      _isRu ? 'Push-уведомления' : 'Push bildirishnomalar';
+  String get notificationSettingsPushDescription => _isRu
+      ? 'Изменения количества баллов и важные уведомления.'
+      : 'Ballar soni yangilanishlari va muhim xabarlar.';
+  String get notificationSettingsSmsTitle =>
+      _isRu ? 'SMS сообщения' : 'SMS xabarlari';
+  String get notificationSettingsSmsDescription => _isRu
+      ? 'Получайте SMS о действиях в аккаунте.'
+      : 'Hisobdagi faollik haqida SMS xabarlari.';
+  String get notificationSettingsEmailTitle =>
+      _isRu ? 'Электронная почта' : 'Elektron pochta';
+  String get notificationSettingsEmailDescription =>
+      _isRu ? 'Ежемесячные итоги и новости.' : 'Oylik hisobotlar va yangiliklar.';
+  String get notificationSettingsPointsTitle =>
+      _isRu ? 'Обновления баллов' : 'Ballar yangilanishlari';
+  String get notificationSettingsPointsDescription => _isRu
+      ? 'Уведомления о начислениях и изменениях количества баллов.'
+      : 'Ballar qo‘shilishi va ballar soni o‘zgarishlari haqida bildirishnomalar.';
+  String get notificationSettingsPromotionsTitle =>
+      _isRu ? 'Промо и события' : 'Aksiyalar va tadbirlar';
+  String get notificationSettingsPromotionsDescription => _isRu
+      ? 'Персональные предложения, награды и события.'
+      : 'Shaxsiy takliflar, sovg‘alar va tadbirlar.';
+
+  // Refer friends
+  String get referFriendsTitle =>
+      _isRu ? 'Пригласить друзей' : 'Doʻstlarni taklif qilish';
+  String get referFriendsIntro => _isRu
+      ? 'Поделитесь Sardoba с друзьями — после активации их аккаунта вы оба получите 10 000 баллов.'
+      : 'Sardoba’ni do‘stlaringiz bilan ulashing — ular akkauntni faollashtirgandan so‘ng ikkovingiz ham 10 000 ball olasiz.';
+  String get referFriendsGenerateHint => _isRu
+      ? 'Сгенерируйте реферальный код, чтобы начать.'
+      : 'Boshlash uchun referal kod yarating.';
+  String get referFriendsGenerateButton =>
+      _isRu ? 'Kod yaratish' : 'Kod yaratish';
+  String get referFriendsCodeTitle =>
+      _isRu ? 'Ваш реферальный код' : 'Referal kodingiz';
+  String get referFriendsCopied =>
+      _isRu ? 'Реферальный код скопирован' : 'Referal kod nusxalandi';
+  String get referFriendsGenerated =>
+      _isRu ? 'Реферальный код создан' : 'Referal kod yaratildi';
+  String get referFriendsHowItWorksTitle =>
+      _isRu ? 'Как это работает' : 'Qanday ishlaydi';
+  String get referFriendsStep1Title =>
+      _isRu ? 'Поделитесь кодом' : 'Kodingizni ulashing';
+  String get referFriendsStep1Description => _isRu
+      ? 'Отправьте ссылку или код друзьям в любом мессенджере.'
+      : 'Referal havola yoki kodni istalgan messenjer orqali do‘stlarga yuboring.';
+  String get referFriendsStep2Title =>
+      _isRu ? 'Друг активирует аккаунт' : 'Do‘st akkauntni faollashtiradi';
+  String get referFriendsStep2Description => _isRu
+      ? 'После активации аккаунта вы оба получаете 10 000 баллов.'
+      : 'Akkaunt faollashgach, ikkovingiz ham 10 000 ball olasiz.';
+  String get referFriendsStep3Title =>
+      _isRu ? 'Баллы начисляются автоматически' : 'Ballar avtomatik qo‘shiladi';
+  String get referFriendsStep3Description => _isRu
+      ? 'Баллы сразу добавляются к общему количеству.'
+      : 'Ballar darhol umumiy ballar soniga qo‘shiladi.';
   String get profileLogout => _isRu ? 'Выйти из аккаунта' : 'Hisobdan chiqish';
   String get profileLogoutConfirmTitle =>
       _isRu ? 'Выйти из аккаунта?' : 'Hisobdan chiqasizmi?';
@@ -289,8 +360,8 @@ class AppStrings {
   String get profileDeleteConfirmTitle =>
       _isRu ? 'Удалить профиль?' : 'Profil o‘chirilsinmi?';
   String get profileDeleteConfirmBody => _isRu
-      ? 'Мы удалим ваши персональные данные и кешбэк. Действие нельзя отменить.'
-      : 'Shaxsiy maʼlumotlar va keshbek o‘chirib yuboriladi. Bu amalni qaytarib boʻlmaydi.';
+      ? 'Мы удалим ваши персональные данные и баллы. Действие нельзя отменить.'
+      : 'Shaxsiy maʼlumotlar va ballar o‘chirib yuboriladi. Bu amalni qaytarib boʻlmaydi.';
   String get profileDeleteConfirmPrimary => _isRu ? 'Удалить' : 'O‘chirish';
   String get profileDeleteConfirmSecondary => _isRu ? 'Отмена' : 'Bekor qilish';
   String get profileDeleteSuccess =>
@@ -388,8 +459,8 @@ class AppStrings {
   String get qrScreenInstruction =>
       _isRu ? 'Покажите этот код на кассе.' : 'Ushbu kodni kassaga ko‘rsating.';
   String get qrScreenFooter => _isRu
-      ? 'QR-код связывает ваш аккаунт и номер телефона для бонусов.'
-      : 'QR-kod hisobingizni telefon raqamingiz bilan bog‘laydi va bonuslarni tezlashtiradi.';
+      ? 'QR-код связывает ваш аккаунт и номер телефона для начисления баллов.'
+      : 'QR-kod hisobingizni telefon raqamingiz bilan bog‘laydi va ballarni tezroq qo‘shadi.';
   String get qrScreenAccountFallback =>
       _isRu ? 'Ваш аккаунт' : 'Sizning hisobingiz';
   String get qrScreenPhoneMissingTitle =>
@@ -492,8 +563,8 @@ class AppStrings {
   String get formPhoneLabel => _isRu ? 'Телефон' : 'Telefon';
   String get formReferralLabel => _isRu ? 'Реферальный код' : 'Referal kod';
   String get formReferralHelper => _isRu
-      ? 'Делитесь кодом с друзьями и получайте бонусы.'
-      : 'Kod bilan oʻrtoqlashing va bonuslar oling.';
+      ? 'Делитесь кодом с друзьями и получайте баллы.'
+      : 'Kod bilan oʻrtoqlashing va ballar oling.';
   String get formReferralHint => _isRu ? 'Необязательно' : 'Ixtiyoriy';
   String get formSaveChanges =>
       _isRu ? 'Сохранить изменения' : 'Oʻzgarishlarni saqlash';

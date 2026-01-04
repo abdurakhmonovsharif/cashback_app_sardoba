@@ -377,7 +377,7 @@ class _SearchScreenState extends State<SearchScreen> {
       buffer.write(reversedDigits[i]);
     }
     final formatted = buffer.toString().split('').reversed.join();
-    final suffix = isRu ? 'сум' : 'soʻm';
+    final suffix = isRu ? 'сум' : "so'm";
     return '$formatted $suffix';
   }
 

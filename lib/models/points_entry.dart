@@ -1,28 +1,31 @@
-enum CashbackSource { qr, order, manual, unknown }
+enum PointsSource { qr, branch, manual, visit, unknown }
 
-CashbackSource cashbackSourceFrom(String? value) {
+PointsSource pointsSourceFrom(String? value) {
   final normalized = value?.trim().toUpperCase();
   switch (normalized) {
     case 'QR':
-      return CashbackSource.qr;
+      return PointsSource.qr;
     case 'ORDER':
-      return CashbackSource.order;
+    case 'VISIT':
+      return PointsSource.visit;
+    case 'BRANCH':
+      return PointsSource.branch;
     case 'MANUAL':
-      return CashbackSource.manual;
+      return PointsSource.manual;
     default:
-      return CashbackSource.unknown;
+      return PointsSource.unknown;
   }
 }
 
-class CashbackEntry {
-  const CashbackEntry({
+class PointsEntry {
+  const PointsEntry({
     required this.id,
     required this.userId,
     required this.amount,
     required this.balanceAfter,
     required this.createdAt,
     this.branchId,
-    this.source = CashbackSource.unknown,
+    this.source = PointsSource.unknown,
     this.staffId,
   });
 
@@ -32,10 +35,10 @@ class CashbackEntry {
   final double balanceAfter;
   final DateTime createdAt;
   final int? branchId;
-  final CashbackSource source;
+  final PointsSource source;
   final int? staffId;
 
-  factory CashbackEntry.fromJson(Map<String, dynamic> json) {
+  factory PointsEntry.fromJson(Map<String, dynamic> json) {
     double parseDouble(dynamic value) {
       if (value is num) return value.toDouble();
       if (value is String) {
@@ -67,12 +70,12 @@ class CashbackEntry {
       return DateTime.now();
     }
 
-    return CashbackEntry(
+    return PointsEntry(
       id: (json['id'] as num?)?.toInt() ?? 0,
       userId: (json['user_id'] as num?)?.toInt() ?? 0,
       amount: parseDouble(json['amount']),
       branchId: (json['branch_id'] as num?)?.toInt(),
-      source: cashbackSourceFrom(json['source']?.toString()),
+      source: pointsSourceFrom(json['source']?.toString()),
       staffId: (json['staff_id'] as num?)?.toInt(),
       balanceAfter: parseDouble(json['balance_after']),
       createdAt: parseDate(json['created_at']),

@@ -570,7 +570,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Add your home, work or other locations to speed up checkout.',
+              'Add your home, work or other locations for quick access.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: bodyTextColor,

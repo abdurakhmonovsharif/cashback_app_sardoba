@@ -15,7 +15,7 @@ import '../../services/auth_service.dart';
 import '../../services/auth_storage.dart';
 import '../../services/session_sync_service.dart';
 import '../../utils/snackbar_utils.dart';
-import '../cashback/cashback_screen.dart';
+import '../points/points_screen.dart';
 import '../notifications/notifications_screen.dart';
 import 'change_pin_screen.dart';
 import 'help_center_screen.dart';
@@ -57,7 +57,7 @@ class _ProfileBody extends StatefulWidget {
 
 class _ProfileBodyState extends State<_ProfileBody> {
   late Future<Account?> _accountFuture;
-  static const int _cashbackThreshold = 30000;
+  static const int _pointsThreshold = 30000;
   final ImagePicker _picker = ImagePicker();
   bool _isUploadingAvatar = false;
 
@@ -123,14 +123,14 @@ class _ProfileBodyState extends State<_ProfileBody> {
     );
   }
 
-  Future<void> _openCashback(Account? account) async {
+  Future<void> _openPoints(Account? account) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => CashbackScreen(
+        builder: (_) => PointsScreen(
           account: account,
-          threshold: _cashbackThreshold,
-          initialBalance: account?.cashbackBalance ?? 0,
-          initialEntries: account?.cashbackHistory,
+          threshold: _pointsThreshold,
+          initialBalance: account?.pointsBalance ?? 0,
+          initialEntries: account?.pointsHistory,
           initialLoyalty: account?.loyalty,
         ),
       ),
@@ -325,8 +325,8 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   const SizedBox(height: 20),
                   _LoyaltyHighlight(
                     account: account,
-                    onCashbackTap:
-                        account == null ? null : () => _openCashback(account),
+                    onPointsTap:
+                        account == null ? null : () => _openPoints(account),
                   ),
                   const SizedBox(height: 24),
                   _SettingsSection(
@@ -552,38 +552,38 @@ class _ProfileHeader extends StatelessWidget {
 class _LoyaltyHighlight extends StatelessWidget {
   const _LoyaltyHighlight({
     required this.account,
-    required this.onCashbackTap,
+    required this.onPointsTap,
   });
 
   final Account? account;
-  final VoidCallback? onCashbackTap;
+  final VoidCallback? onPointsTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isRu = l10n.locale == AppLocale.ru;
-    final balanceValue = account?.cashbackBalance;
+    final balanceValue = account?.pointsBalance;
     final balanceLabel =
         balanceValue != null ? _formatCurrency(balanceValue, isRu) : '—';
     final helper = account == null
-        ? l10n.cashbackLoginRequired
-        : l10n.cashbackHelper;
+        ? l10n.pointsLoginRequired
+        : l10n.pointsHelper;
 
     return CombinedCardWidget(
-      balanceLabel: l10n.cashbackTitle,
+      balanceLabel: l10n.pointsTitle,
       balanceValue: balanceLabel,
       balanceNote: helper,
       tierTitle: '',
       tierNote: '',
       showTier: false,
       currentPointsText: null,
-      onTap: onCashbackTap,
+      onTap: onPointsTap,
     );
   }
 
   String _formatCurrency(double value, bool isRu) {
     final formatted = _formatAmount(value, isRu: isRu);
-    final suffix = isRu ? 'сум' : 'soʻm';
+    final suffix = isRu ? 'балл' : 'ball';
     return '$formatted $suffix';
   }
 

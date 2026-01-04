@@ -23,7 +23,7 @@ import '../../services/notification_socket_service.dart';
 import '../../models/app_notification.dart';
 import '../catalog/catalog_screen.dart';
 import '../catalog/product_details_screen.dart';
-import '../cashback/cashback_screen.dart';
+import '../points/points_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../qr/qr_screen.dart';
 import '../search/search_screen.dart';
@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _refreshHome() async {
     final account = await SessionSyncService.instance.sync();
     if (account != null) {
-      // Emit the latest profile (including cashback) to listening widgets.
+      // Emit the latest profile (including points) to listening widgets.
       await AuthStorage.instance.updateCurrentAccount(account);
     }
     // Refresh featured news on pull-to-refresh.
@@ -1137,7 +1137,7 @@ class _OffersCarouselState extends State<_OffersCarousel> {
       buffer.write(reversed[i]);
     }
     final formatted = buffer.toString().split('').reversed.join();
-    final suffix = isRu ? 'сум' : 'soʻm';
+    final suffix = isRu ? 'сум' : "so'm";
     return '$formatted $suffix';
   }
 
@@ -1523,7 +1523,7 @@ class _LoyaltyStats extends StatefulWidget {
 }
 
 class _LoyaltyStatsState extends State<_LoyaltyStats> {
-  static const int _cashbackThreshold = 30000;
+  static const int _pointsThreshold = 30000;
   final AuthStorage _storage = AuthStorage.instance;
   Account? _account;
   bool _isLoading = true;
@@ -1567,14 +1567,14 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
     super.dispose();
   }
 
-  Future<void> _openCashback(Account account) async {
+  Future<void> _openPoints(Account account) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => CashbackScreen(
+        builder: (_) => PointsScreen(
           account: account,
-          threshold: _cashbackThreshold,
-          initialBalance: account.cashbackBalance ?? 0,
-          initialEntries: account.cashbackHistory,
+          threshold: _pointsThreshold,
+          initialBalance: account.pointsBalance ?? 0,
+          initialEntries: account.pointsHistory,
           initialLoyalty: account.loyalty,
         ),
       ),
@@ -1585,7 +1585,7 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
 
   String _formatCurrency(double value, bool isRu) {
     final formatted = _formatAmount(value, isRu: isRu);
-    final suffix = isRu ? 'сум' : 'soʻm';
+    final suffix = isRu ? 'балл' : 'ball';
     return '$formatted $suffix';
   }
 
@@ -1628,24 +1628,24 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isRu = l10n.locale == AppLocale.ru;
-    final balanceValue = _account?.cashbackBalance;
+    final balanceValue = _account?.pointsBalance;
     final balanceLabel = _isLoading
         ? '-'
         : balanceValue != null
             ? _formatCurrency(balanceValue, isRu)
             : '-';
     final helper = _account == null
-        ? l10n.cashbackLoginRequired
-        : l10n.cashbackHelper;
+        ? l10n.pointsLoginRequired
+        : l10n.pointsHelper;
     return CombinedCardWidget(
-      balanceLabel: l10n.cashbackTitle,
+      balanceLabel: l10n.pointsTitle,
       balanceValue: balanceLabel,
       balanceNote: helper,
       tierTitle: '',
       tierNote: '',
       showTier: false,
       currentPointsText: null,
-      onTap: _account == null ? null : () => _openCashback(_account!),
+      onTap: _account == null ? null : () => _openPoints(_account!),
     );
   }
 }

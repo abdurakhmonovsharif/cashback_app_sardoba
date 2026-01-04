@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'cashback_entry.dart';
+import 'points_entry.dart';
 import 'loyalty_summary.dart';
 
 class Account {
@@ -12,13 +12,13 @@ class Account {
     this.referralCode,
     this.isVerified = false,
     this.id,
-    this.cashbackBalance,
+    this.pointsBalance,
     this.dateOfBirth,
     this.profilePhotoUrl,
     this.waiterId,
     this.loyalty,
     this.level,
-    this.cashbackHistory,
+    this.pointsHistory,
     this.cardTracks,
     this.giftget = false,
   });
@@ -30,13 +30,13 @@ class Account {
   final String? referralCode;
   final bool isVerified;
   final int? id;
-  final double? cashbackBalance;
+  final double? pointsBalance;
   final DateTime? dateOfBirth;
   final String? profilePhotoUrl;
   final int? waiterId;
   final LoyaltySummary? loyalty;
   final String? level;
-  final List<CashbackEntry>? cashbackHistory;
+  final List<PointsEntry>? pointsHistory;
   final List<String>? cardTracks;
   final bool giftget;
 
@@ -48,13 +48,13 @@ class Account {
     String? referralCode,
     bool? isVerified,
     int? id,
-    double? cashbackBalance,
+    double? pointsBalance,
     DateTime? dateOfBirth,
     String? profilePhotoUrl,
     int? waiterId,
     LoyaltySummary? loyalty,
     String? level,
-    List<CashbackEntry>? cashbackHistory,
+    List<PointsEntry>? pointsHistory,
     List<String>? cardTracks,
     bool? giftget,
   }) {
@@ -66,13 +66,13 @@ class Account {
       referralCode: referralCode ?? this.referralCode,
       isVerified: isVerified ?? this.isVerified,
       id: id ?? this.id,
-      cashbackBalance: cashbackBalance ?? this.cashbackBalance,
+      pointsBalance: pointsBalance ?? this.pointsBalance,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       profilePhotoUrl: profilePhotoUrl ?? this.profilePhotoUrl,
       waiterId: waiterId ?? this.waiterId,
       loyalty: loyalty ?? this.loyalty,
       level: level ?? this.level,
-      cashbackHistory: cashbackHistory ?? this.cashbackHistory,
+      pointsHistory: pointsHistory ?? this.pointsHistory,
       cardTracks: cardTracks ?? this.cardTracks,
       giftget: giftget ?? this.giftget,
     );
@@ -86,14 +86,14 @@ class Account {
         'referralCode': referralCode,
         'isVerified': isVerified,
         'id': id,
-        'cashbackBalance': cashbackBalance,
+        'pointsBalance': pointsBalance,
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'profilePhotoUrl': profilePhotoUrl,
         'waiterId': waiterId,
         'loyalty': loyalty?.toJson(),
         'level': level,
-        'cashbackHistory':
-            cashbackHistory?.map((entry) => entry.toJson()).toList(),
+        'pointsHistory':
+            pointsHistory?.map((entry) => entry.toJson()).toList(),
         'cardTracks': cardTracks,
         'giftget': giftget,
       };
@@ -108,7 +108,8 @@ class Account {
       referralCode: json['referralCode'] as String?,
       isVerified: json['isVerified'] as bool? ?? false,
       id: json['id'] as int?,
-      cashbackBalance: (json['cashbackBalance'] as num?)?.toDouble(),
+      pointsBalance: (json['pointsBalance'] as num?)?.toDouble() ??
+          (json['cashbackBalance'] as num?)?.toDouble(),
       dateOfBirth: _parseDate(json['dateOfBirth'] ?? json['date_of_birth']),
       profilePhotoUrl: (json['profilePhotoUrl'] as String?) ??
           (json['profile_photo_url'] as String?),
@@ -118,9 +119,10 @@ class Account {
         (json['loyalty'] as Map?)?.cast<String, dynamic>(),
       ),
       level: json['level'] as String?,
-      cashbackHistory: (json['cashbackHistory'] as List?)
+      pointsHistory: ((json['pointsHistory'] as List?) ??
+              (json['cashbackHistory'] as List?))
           ?.whereType<Map>()
-          .map((e) => CashbackEntry.fromJson(e.cast<String, dynamic>()))
+          .map((e) => PointsEntry.fromJson(e.cast<String, dynamic>()))
           .toList(),
       cardTracks:
           (json['cardTracks'] as List?)?.whereType<String>().toList(),

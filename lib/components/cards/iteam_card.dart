@@ -22,6 +22,8 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isRu = Localizations.localeOf(context).languageCode == 'ru';
+    final suffix = isRu ? 'сум' : "so'm";
     TextStyle textStyle = Theme.of(context).textTheme.labelLarge!.copyWith(
           color: titleColor.withValues(alpha: 0.64),
           fontWeight: FontWeight.normal,
@@ -79,7 +81,7 @@ class ItemCard extends StatelessWidget {
                         Text(foodType!, style: textStyle),
                         const Spacer(),
                         Text(
-                          "USD$price",
+                          "$price $suffix",
                           style: Theme.of(context)
                               .textTheme
                               .labelLarge!

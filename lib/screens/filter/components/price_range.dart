@@ -12,7 +12,7 @@ class PriceRange extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SectionTitle(
-          title: "Price Range",
+          title: "Points Range",
           press: () {},
           isMainSection: false,
         ),
@@ -72,7 +72,7 @@ class RoundedButton extends StatelessWidget {
         ),
         onPressed: press,
         child: Text(
-          "\$" * (index + 1),
+          "P" * (index + 1),
           style: TextStyle(
             fontWeight: FontWeight.normal,
             color: isActive ? Colors.white : titleColor,
