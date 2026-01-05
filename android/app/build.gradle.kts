@@ -9,7 +9,7 @@ import java.util.Properties
 import java.io.FileInputStream
 
 android {
-    namespace = "com.sardoba.app"
+    namespace = "com.sardobabukhara.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
@@ -31,7 +31,7 @@ android {
 
     defaultConfig {
         // Application ID must match Play Console package name.
-        applicationId = "com.sardoba.app"
+        applicationId = "com.sardobabukhara.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26

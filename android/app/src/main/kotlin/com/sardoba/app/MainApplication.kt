@@ -1,4 +1,4 @@
-package com.sardoba.app
+package com.sardobabukhara.app
 
 import android.app.Application
 import com.yandex.mapkit.MapKitFactory
