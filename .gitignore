@@ -69,3 +69,5 @@ windows/flutter/ephemeral/
 # Android keystore files
 android/app/upload-keystore.jks
 android/key.properties
+
+run.md
