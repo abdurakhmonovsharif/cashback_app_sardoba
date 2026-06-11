@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'constants.dart';
 import 'screens/catalog/catalog_screen.dart';
 import 'screens/home/home_screen.dart';
-import 'screens/locations/locations_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/qr/qr_screen.dart';
 import 'services/notification_socket_service.dart';
@@ -20,24 +19,32 @@ class EntryPoint extends StatefulWidget {
     return true;
   }
 
+  static bool showShellScreen(BuildContext context, Widget screen) {
+    final state = context.findAncestorStateOfType<_EntryPointState>();
+    if (state == null) return false;
+    state.showShellScreen(screen);
+    return true;
+  }
+
   @override
   State<EntryPoint> createState() => _EntryPointState();
 }
 
 class _EntryPointState extends State<EntryPoint> {
   late int _selectedIndex;
+  Widget? _shellScreen;
 
   final List<Map<String, dynamic>> _navItems = [
-    {"icon": Icons.home_rounded, "label": "Home"},
-    {"icon": Icons.grid_view_rounded, "label": "Catalog"},
-    {"icon": Icons.location_on_outlined, "label": "Locations"},
-    {"icon": Icons.person_outline_rounded, "label": "Profile"},
+    {"icon": Icons.home_rounded, "label": "Bosh sahifa"},
+    {"icon": Icons.grid_view_rounded, "label": "Menyu"},
+    {"icon": Icons.receipt_long_outlined, "label": "Buyurtmalarim"},
+    {"icon": Icons.person_outline_rounded, "label": "Profil"},
   ];
 
   final List<Widget> _screens = const [
     HomeScreen(),
     CatalogScreen(),
-    LocationsScreen(),
+    _OrdersPlaceholderScreen(),
     ProfileScreen(),
   ];
 
@@ -50,21 +57,39 @@ class _EntryPointState extends State<EntryPoint> {
   }
 
   void _onTabSelected(int index) {
-    if (_selectedIndex == index) return;
+    if (_selectedIndex == index && _shellScreen == null) return;
     setState(() {
       _selectedIndex = index;
+      _shellScreen = null;
     });
   }
 
   void goToTab(int index) => _onTabSelected(index);
+
+  void showShellScreen(Widget screen) {
+    setState(() {
+      _shellScreen = screen;
+    });
+  }
+
+  void _closeShellScreen() {
+    if (_shellScreen == null) return;
+    setState(() {
+      _shellScreen = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        _screens[_selectedIndex],
-        Padding(
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-          child: Align(
+    return PopScope(
+      canPop: _shellScreen == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeShellScreen();
+      },
+      child: Stack(
+        children: [
+          _shellScreen ?? _screens[_selectedIndex],
+          Align(
             alignment: Alignment.bottomCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 760),
@@ -81,8 +106,8 @@ class _EntryPointState extends State<EntryPoint> {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -102,75 +127,102 @@ class FloatingNavBar extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final bottomInset = MediaQuery.of(context).padding.bottom;
-    final double safeOffset = bottomInset > 0 ? bottomInset * 0.20 : 0;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + safeOffset),
-      child: SizedBox(
-        height: floatingNavBarHeight,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(36),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bottomInset = MediaQuery.of(context).padding.bottom;
+        final availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.sizeOf(context).width;
+        final isCompact = availableWidth < 360;
+        final navItemWidth = isCompact ? 48.0 : 52.0;
+        final centerGap = isCompact ? 52.0 : 62.0;
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(18, 0, 18, bottomInset),
+          child: SizedBox(
+            width: double.infinity,
+            height: floatingNavBarHeight,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                DecoratedBox(
                   decoration: BoxDecoration(
-                    // Glassmorphism background for nav bar.
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(36),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.35),
-                      width: 1,
-                    ),
+                    borderRadius: BorderRadius.circular(30),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.07),
-                        blurRadius: 18,
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 24,
                         offset: const Offset(0, 10),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 4,
                       ),
                     ],
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: List.generate(navItems.length + 1, (index) {
-                      if (index == 2) {
-                        return const SizedBox(width: 92);
-                      }
-                      final navIndex = index > 2 ? index - 1 : index;
-                      final item = navItems[navIndex];
-                      final isActive = navIndex == selectedIndex;
-                      return _NavItem(
-                        icon: item["icon"] as IconData,
-                        isActive: isActive,
-                        onTap: () => onItemSelected(navIndex),
-                      );
-                    }),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(30),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.96),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: const Color(0xFFE2E8F0),
+                            width: 1,
+                          ),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: List.generate(navItems.length + 1, (index) {
+                            if (index == 2) {
+                              return SizedBox(width: centerGap);
+                            }
+                            final navIndex = index > 2 ? index - 1 : index;
+                            final item = navItems[navIndex];
+                            final isActive = navIndex == selectedIndex;
+                            return _NavItem(
+                              icon: item["icon"] as IconData,
+                              label: item["label"] as String,
+                              width: navItemWidth,
+                              isActive: isActive,
+                              onTap: () => onItemSelected(navIndex),
+                            );
+                          }),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                Align(
+                  alignment: Alignment.center,
+                  child: _AnimatedQrButton(onPressed: onQrPressed),
+                ),
+              ],
             ),
-            Align(
-              alignment: Alignment.center,
-              child: _AnimatedQrButton(onPressed: onQrPressed),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
 
 class _NavItem extends StatelessWidget {
   final IconData icon;
+  final String label;
+  final double width;
   final bool isActive;
   final VoidCallback onTap;
 
   const _NavItem({
     required this.icon,
+    required this.label,
+    required this.width,
     required this.isActive,
     required this.onTap,
   });
@@ -178,41 +230,47 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const primaryColor = Color(0xFF00A86B);
-    final fgColor =
-        isActive ? Colors.white : primaryColor.withValues(alpha: 0.5);
+    final fgColor = isActive ? primaryColor : const Color(0xFF72798B);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: onTap,
-      child: AnimatedScale(
-        duration: const Duration(milliseconds: 220),
-        scale: isActive ? 1 : 0.9,
-        curve: Curves.easeOut,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          height: 46,
-          width: 46,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color:
-                isActive ? primaryColor : Colors.white.withValues(alpha: 0.25),
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: primaryColor.withValues(alpha: 0.25),
-                      blurRadius: 18,
-                      offset: const Offset(0, 10),
-                    ),
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: Icon(
-            icon,
-            size: 22,
-            color: fgColor,
-          ),
+      child: SizedBox(
+        width: width,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOut,
+              height: 34,
+              width: 34,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive
+                    ? primaryColor.withValues(alpha: 0.12)
+                    : Colors.white.withValues(alpha: 0.55),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                icon,
+                size: 20,
+                color: fgColor,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: fgColor,
+                fontSize: 9,
+                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                decoration: TextDecoration.none,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -262,8 +320,6 @@ class _AnimatedQrButtonState extends State<_AnimatedQrButton>
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF00A86B);
-
     return GestureDetector(
       onTap: _handleTap,
       child: AnimatedBuilder(
@@ -275,37 +331,65 @@ class _AnimatedQrButtonState extends State<_AnimatedQrButton>
             child: child,
           );
         },
-        child: Container(
-          height: 62,
-          width: 62,
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF0DD277), Color(0xFF089D57)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withValues(alpha: 0.26),
-                blurRadius: 24,
-                offset: const Offset(0, 14),
+        child: SizedBox(
+          width: 64,
+          height: 72,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                height: 56,
+                width: 56,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF13883F), Color(0xFF0A6F33)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                alignment: Alignment.center,
+                child: const Icon(
+                  Icons.qr_code_rounded,
+                  size: 25,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 2),
+              const Text(
+                "QR / To‘lash",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Color(0xFF353B4B),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.none,
+                ),
               ),
             ],
           ),
-          alignment: Alignment.center,
-          child: Container(
-            height: 54,
-            width: 54,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.9),
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              Icons.qr_code_rounded,
-              size: 28,
-              color: primaryColor.withValues(alpha: 0.92),
+        ),
+      ),
+    );
+  }
+}
+
+class _OrdersPlaceholderScreen extends StatelessWidget {
+  const _OrdersPlaceholderScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Color(0xFFFAFBFC),
+      body: SafeArea(
+        child: Center(
+          child: Text(
+            'Buyurtmalarim',
+            style: TextStyle(
+              color: Color(0xFF010F07),
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),

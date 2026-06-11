@@ -38,6 +38,7 @@ class NotificationSocketManager {
   bool _shouldReconnect = false;
   int _reconnectAttempts = 0;
   bool _isStarting = false;
+  bool _isOpeningChannel = false;
   bool _isRefreshingTokens = false;
   bool _isHandlingMissingTokens = false;
 
@@ -45,20 +46,17 @@ class NotificationSocketManager {
 
   Future<void> start() async {
     if (_isStarting || _shouldReconnect) return;
-    final token = await _storage.getAccessToken();
-    if (token == null || token.isEmpty) {
-      debugPrint('⚠️ Skipping notification WS start: no access token (guest mode).');
-      connectionState.value = SocketConnectionState.disconnected;
-      _shouldReconnect = false;
-      return;
-    }
     _isStarting = true;
     debugPrint('🔌 Notification WS starting…');
     try {
       _shouldReconnect = true;
       connectionState.value = SocketConnectionState.connecting;
-      await _syncProfileOnConnect();
-      await _registerDevice();
+      if (await _hasAccessToken()) {
+        await _syncProfileOnConnect();
+        await _registerDevice();
+      } else {
+        debugPrint('🔓 Notification WS starting without auth (guest mode).');
+      }
       await _connectInternal();
     } finally {
       _isStarting = false;
@@ -69,10 +67,7 @@ class NotificationSocketManager {
     debugPrint('🛑 Notification WS stopping…');
     _shouldReconnect = false;
     _reconnectTimer?.cancel();
-    _channelSubscription?.cancel();
-    await _channel?.sink.close(WebSocketStatus.normalClosure, 'Client stop');
-    _channel = null;
-    _channelSubscription = null;
+    await _disposeChannel(closeReason: 'Client stop');
     connectionState.value = SocketConnectionState.disconnected;
   }
 
@@ -101,54 +96,103 @@ class NotificationSocketManager {
 
   Future<void> _connectInternal() async {
     if (!_shouldReconnect) return;
-    if (!await _ensureAccessTokenAvailable()) return;
     final token = await _storage.getAccessToken();
-    if (token == null || token.isEmpty) {
-      connectionState.value = SocketConnectionState.disconnected;
-      return;
+    String? authHeader;
+    if (token != null && token.isNotEmpty) {
+      final tokenType = await _storage.getTokenType();
+      final scheme = _normalizeScheme(tokenType);
+      authHeader = '$scheme $token';
+    } else {
+      final refreshToken = await _storage.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        debugPrint(
+          '🔄 Access token missing, attempting refresh using stored refresh token.',
+        );
+        _refreshTokensAndReconnect();
+        return;
+      }
+      if (await _storage.hasCurrentUser()) {
+        debugPrint(
+          '⚠️ Missing both access and refresh tokens, logging the user out.',
+        );
+        await _handleMissingTokens();
+        return;
+      }
     }
-    final tokenType = await _storage.getTokenType();
-    final scheme = _normalizeScheme(tokenType);
     final uri = _buildWebSocketUri();
     try {
       await _disposeChannel();
       debugPrint('🌐 Connecting to notification WS at $uri');
-      _channel = IOWebSocketChannel.connect(
+      _isOpeningChannel = true;
+      final channel = IOWebSocketChannel.connect(
         uri,
-        headers: {
-          'Authorization': '$scheme $token',
-          'Sec-WebSocket-Protocol': '$scheme $token',
-        },
+        connectTimeout: const Duration(seconds: 8),
+        headers: authHeader == null
+            ? null
+            : {
+                'Authorization': authHeader,
+                'Sec-WebSocket-Protocol': authHeader,
+              },
       );
-      _channel?.sink.add(
-        jsonEncode({
-          'type': 'auth',
-          'token': '$scheme $token',
-          'language': AppLanguage.instance.locale.apiCode,
-        }),
-      );
-      debugPrint('🔑 Notification WS auth payload sent.');
-      _channelSubscription = _channel!.stream.listen(
+      _channel = channel;
+      _observeSinkDone(channel);
+      _channelSubscription = channel.stream.listen(
         _handleMessage,
         onDone: _handleDone,
         onError: _handleError,
         cancelOnError: true,
       );
+      await channel.ready;
+      _isOpeningChannel = false;
+      if (_channel != channel || !_shouldReconnect) return;
+      if (authHeader != null) {
+        channel.sink.add(
+          jsonEncode({
+            'type': 'auth',
+            'token': authHeader,
+            'language': AppLanguage.instance.locale.apiCode,
+          }),
+        );
+        debugPrint('🔑 Notification WS auth payload sent.');
+      }
       _resetReconnect();
       connectionState.value = SocketConnectionState.connected;
       debugPrint('✅ Connected to notification WS at $uri');
     } catch (error) {
+      _isOpeningChannel = false;
       debugPrint('⚠️ Notification WS connect failed: $error');
       connectionState.value = SocketConnectionState.disconnected;
+      if (_isAuthFailure(error)) {
+        await _handleAuthFailure();
+        return;
+      }
       _scheduleReconnect();
     }
   }
 
-  Future<void> _disposeChannel() async {
-    await _channelSubscription?.cancel();
+  Future<void> _disposeChannel({String closeReason = 'Reconnect'}) async {
+    final subscription = _channelSubscription;
+    final channel = _channel;
     _channelSubscription = null;
-    await _channel?.sink.close(WebSocketStatus.normalClosure, 'Reconnect');
     _channel = null;
+    try {
+      await subscription?.cancel();
+    } catch (error) {
+      debugPrint('⚠️ Notification WS subscription cancel failed: $error');
+    }
+    try {
+      await channel?.sink.close(WebSocketStatus.normalClosure, closeReason);
+    } catch (error) {
+      debugPrint('⚠️ Notification WS close failed: $error');
+    }
+  }
+
+  void _observeSinkDone(WebSocketChannel channel) {
+    unawaited(
+      channel.sink.done.catchError((Object error, StackTrace stack) {
+        debugPrint('⚠️ Notification WS sink closed with error: $error');
+      }),
+    );
   }
 
   void _handleDone() {
@@ -160,8 +204,9 @@ class NotificationSocketManager {
   void _handleError(Object error, StackTrace stack) {
     debugPrint('⚠️ Notification WS error: $error');
     connectionState.value = SocketConnectionState.disconnected;
+    if (_isOpeningChannel) return;
     if (_isAuthFailure(error)) {
-      _refreshTokensAndReconnect();
+      unawaited(_handleAuthFailure());
       return;
     }
     _scheduleReconnect();
@@ -221,8 +266,7 @@ class NotificationSocketManager {
       );
       unawaited(
         _refreshPointsForCurrentUser().catchError((error) {
-          debugPrint(
-              '⚠️ Failed to refresh points after notification: $error');
+          debugPrint('⚠️ Failed to refresh points after notification: $error');
         }),
       );
     } catch (error) {
@@ -332,8 +376,9 @@ class NotificationSocketManager {
   }
 
   bool _isEphemeralNotification(Map<String, dynamic> payload) {
-    final idValue =
-        payload['notification_id'] ?? payload['id'] ?? payload['notificationId'];
+    final idValue = payload['notification_id'] ??
+        payload['id'] ??
+        payload['notificationId'];
     return idValue == null;
   }
 
@@ -419,6 +464,28 @@ class NotificationSocketManager {
   bool _isDioAuthFailure(DioException error) {
     final status = error.response?.statusCode;
     return status == 401 || status == 403;
+  }
+
+  Future<bool> _hasAccessToken() async {
+    final token = await _storage.getAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  Future<void> _handleAuthFailure() async {
+    final refreshToken = await _storage.getRefreshToken();
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      _refreshTokensAndReconnect();
+      return;
+    }
+    if (await _storage.hasCurrentUser()) {
+      await _handleMissingTokens();
+      return;
+    }
+    debugPrint('⚠️ Guest notification WS rejected by server.');
+    _shouldReconnect = false;
+    _reconnectTimer?.cancel();
+    connectionState.value = SocketConnectionState.disconnected;
+    await _disposeChannel();
   }
 
   Future<bool> _ensureAccessTokenAvailable() async {

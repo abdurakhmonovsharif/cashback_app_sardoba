@@ -7,19 +7,34 @@
         {
             "name": "foodly_ui",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define=APP_NAME=Sardoba",
+                "--dart-define=API_BASE_URL=https://api.sardobacashback.uz",
+                "--dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40"
+            ]
         },
         {
             "name": "foodly_ui (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "toolArgs": [
+                "--dart-define=APP_NAME=Sardoba",
+                "--dart-define=API_BASE_URL=https://api.sardobacashback.uz",
+                "--dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40"
+            ]
         },
         {
             "name": "foodly_ui (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "toolArgs": [
+                "--dart-define=APP_NAME=Sardoba",
+                "--dart-define=API_BASE_URL=https://api.sardobacashback.uz",
+                "--dart-define=YANDEX_MAPKIT_API_KEY=2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40"
+            ]
         }
     ]
 }

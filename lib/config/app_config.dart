@@ -1,5 +1,5 @@
 class AppConfig {
-  static const String _fallbackBaseUrl = 'http://127.0.0.1:8000';
+  static const String _fallbackBaseUrl = 'https://api.sardobacashback.uz';
   // Matches Android strings.xml default; used if no dart-define provided.
   static const String _fallbackYandexApiKey =
       '2e1fd6f5-894a-4ecf-8fd4-70572e2bfb40';

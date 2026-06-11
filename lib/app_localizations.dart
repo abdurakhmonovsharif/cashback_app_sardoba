@@ -61,9 +61,31 @@ class AppStrings {
   // Home
   String get changeBranch => _isRu ? 'Сменить филиал' : 'Filialni tanlang';
   String get changeBranchSubtitle => _isRu ? 'Рядом с вами' : 'Sizga yaqin joy';
-  String get searchHint => _isRu ? 'Поиск' : 'Izlash';
-  String get loyaltyTitle =>
-      _isRu ? 'Баллы' : 'Ballar';
+  String get searchHint =>
+      _isRu ? 'Что хотите заказать?' : 'Nima isteʼmol qilmoqchisiz?';
+  String get deliveryTimeLabel =>
+      _isRu ? 'Доставка за 25 минут' : '25 daqiqada yetkazib berish';
+  String get cashbackHeroEyebrow =>
+      _isRu ? 'В каждом заказе' : 'Har bir buyurtmada';
+  String get cashbackHeroTitle => _isRu ? '2.5% cashback' : '2.5% cashback';
+  String get cashbackHeroSubtitle =>
+      _isRu ? 'Платите и копите бонусы!' : 'To‘lang va bonus yig‘ing!';
+  String get cashbackHeroButton => _isRu ? 'Сделать заказ' : 'Buyurtma qilish';
+  String get cashbackBalanceTitle =>
+      _isRu ? 'Баланс cashback' : 'Cashback balans';
+  String get orderDeliveryTitle => _isRu ? 'Доставка' : 'Yetkazib berish';
+  String get orderDeliveryDescription => _isRu
+      ? 'Доставим в течение 30–45 минут'
+      : '30–45 daqiqa ichida yetkazib beramiz';
+  String get orderPickupTitle => _isRu ? 'Самовывоз' : 'Olib ketish';
+  String get orderPickupDescription => _isRu
+      ? 'Будет готово через 15–20 минут'
+      : '15–20 daqiqa ichida tayyor bo‘ladi';
+  String get categoryAll => _isRu ? 'Все' : 'Barchasi';
+  String get popularFoodsTitle =>
+      _isRu ? 'Популярные блюда' : 'Mashhur taomlar';
+  String get viewAll => _isRu ? 'Все' : 'Barchasi';
+  String get loyaltyTitle => _isRu ? 'Баллы' : 'Ballar';
   String get offersTitle => _isRu ? 'Предложения' : 'Takliflar';
   String get pointsTitle => _isRu ? 'Количество баллов' : 'Ballar soni';
   String get pointsHelper => _isRu
@@ -129,11 +151,9 @@ class AppStrings {
   String get pointsScreenDescription => _isRu
       ? 'Следите за количеством баллов и историей.'
       : 'Ballar soni va tarixini kuzating.';
-  String get pointsViewButton =>
-      _isRu ? 'Посмотреть' : 'Ko‘rish';
+  String get pointsViewButton => _isRu ? 'Посмотреть' : 'Ko‘rish';
   String get pointsViewLocked => _isRu ? 'Недоступно' : 'Mavjud emas';
-  String get pointsHistoryTitle =>
-      _isRu ? 'История баллов' : 'Ballar tarixi';
+  String get pointsHistoryTitle => _isRu ? 'История баллов' : 'Ballar tarixi';
   String get pointsHistoryDemoLabel =>
       _isRu ? 'Демо операции' : 'Demo operatsiyalar';
   String get pointsHistoryEmpty =>
@@ -254,9 +274,8 @@ class AppStrings {
       _isRu ? 'FAQ, чат и контакты' : 'FAQ, chat va aloqa';
   String get profileReferMenuTitle =>
       _isRu ? 'Пригласить друзей' : 'Doʻstlarni taklif qilish';
-  String get profileReferMenuSubtitle => _isRu
-      ? 'Получайте баллы за приглашения'
-      : 'Takliflar evaziga ball oling';
+  String get profileReferMenuSubtitle =>
+      _isRu ? 'Получайте баллы за приглашения' : 'Takliflar evaziga ball oling';
   String loyaltyNextLevelLabel(String level) =>
       _isRu ? 'Следующий уровень: $level' : 'Keyingi daraja: $level';
   String loyaltyPointsToNextHelper(String points, String level) => _isRu
@@ -283,8 +302,7 @@ class AppStrings {
       : 'Ilova moliyaviy xizmat emas; unda faqat sodiqlik ballari ko‘rsatiladi.';
 
   // Notification settings
-  String get notificationSettingsChannelsTitle =>
-      _isRu ? 'Каналы' : 'Kanallar';
+  String get notificationSettingsChannelsTitle => _isRu ? 'Каналы' : 'Kanallar';
   String get notificationSettingsPreferencesTitle =>
       _isRu ? 'Настройки' : 'Sozlamalar';
   String get notificationSettingsPushTitle =>
@@ -299,8 +317,9 @@ class AppStrings {
       : 'Hisobdagi faollik haqida SMS xabarlari.';
   String get notificationSettingsEmailTitle =>
       _isRu ? 'Электронная почта' : 'Elektron pochta';
-  String get notificationSettingsEmailDescription =>
-      _isRu ? 'Ежемесячные итоги и новости.' : 'Oylik hisobotlar va yangiliklar.';
+  String get notificationSettingsEmailDescription => _isRu
+      ? 'Ежемесячные итоги и новости.'
+      : 'Oylik hisobotlar va yangiliklar.';
   String get notificationSettingsPointsTitle =>
       _isRu ? 'Обновления баллов' : 'Ballar yangilanishlari';
   String get notificationSettingsPointsDescription => _isRu
@@ -531,8 +550,9 @@ class AppStrings {
   String get authDobHint => _isRu ? 'Выберите дату' : 'Sanani tanlang';
   String get authDobValidation =>
       _isRu ? 'Укажите дату рождения' : 'Tugʻilgan sanani kiriting';
-  String get dobTooYoung =>
-      _isRu ? 'Вам должно быть 13 лет или больше' : '13 yoshdan katta bo‘lishingiz kerak';
+  String get dobTooYoung => _isRu
+      ? 'Вам должно быть 13 лет или больше'
+      : '13 yoshdan katta bo‘lishingiz kerak';
   String get formFullNameLabel => _isRu ? 'Полное имя' : 'Toʻliq ism';
   String get formFullNameHint => _isRu ? 'Введите имя' : 'Ismingizni kiriting';
   String get formFullNameRequired =>

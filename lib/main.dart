@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -17,14 +18,19 @@ import 'utils/responsive_layout.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  assert(() {
+    debugPaintBaselinesEnabled = false;
+    debugPaintSizeEnabled = false;
+    debugPaintLayerBordersEnabled = false;
+    debugRepaintRainbowEnabled = false;
+    return true;
+  }());
 
   await AuthStorage.instance.ensureInitialized();
   await PushNotificationManager.instance.init();
   // Use edge-to-edge so status/navigation bars remain visible.
-  await SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.manual,
-    overlays: [SystemUiOverlay.top]
-  );
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top]);
 
   runApp(const MyApp());
 
@@ -98,7 +104,16 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             ),
-            builder: (context, child) => ResponsiveViewport(child: child),
+            builder: (context, child) {
+              assert(() {
+                debugPaintBaselinesEnabled = false;
+                debugPaintSizeEnabled = false;
+                debugPaintLayerBordersEnabled = false;
+                debugRepaintRainbowEnabled = false;
+                return true;
+              }());
+              return ResponsiveViewport(child: child);
+            },
             home: _buildHome(),
           ),
         );
@@ -114,7 +129,6 @@ class _MyAppState extends State<MyApp> {
     if (!_splashFinished) {
       return SplashScreen(
         onFinished: () async {
-
           final dest = await _resolveStartDestination();
 
           if (!mounted) return;
@@ -123,7 +137,6 @@ class _MyAppState extends State<MyApp> {
             _destination = dest;
             _splashFinished = true;
           });
-
         },
       );
     }
@@ -160,7 +173,6 @@ class _MyAppState extends State<MyApp> {
   ///   DESTINATION RESOLVER
   /// ─────────────────────────────────────────
   Future<_AppStartDestination> _resolveStartDestination() async {
-
     final storage = AuthStorage.instance;
 
     final hasUser = await storage.hasCurrentUser();
