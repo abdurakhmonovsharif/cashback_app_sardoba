@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../models/account.dart';
+import '../models/loyalty_qr.dart';
 import '../models/points_entry.dart';
 import '../models/loyalty_summary.dart';
 import '../models/login_response.dart';
@@ -429,8 +430,7 @@ class AuthService {
         _string(source['referral_code']);
     final isVerified = (source['is_verified'] as bool?) ?? true;
     final id = _int(source['id']);
-    final pointsMap =
-        _asMap(source['_points']) ?? _asMap(source['_cashback']);
+    final pointsMap = _asMap(source['_points']) ?? _asMap(source['_cashback']);
     double? pointsBalance = _double(source['points_balance']) ??
         _double(source['pointsBalance']) ??
         _double(source['cashback_balance']) ??
@@ -474,9 +474,8 @@ class AuthService {
         .where((value) => value.isNotEmpty)
         .toList();
 
-    final giftget = (source['giftget'] as bool?) ??
-        (source['gift_get'] as bool?) ??
-        false;
+    final giftget =
+        (source['giftget'] as bool?) ?? (source['gift_get'] as bool?) ?? false;
 
     return Account(
       name: resolvedName,
@@ -494,6 +493,7 @@ class AuthService {
       level: _string(source['level']) ?? loyalty?.level,
       pointsHistory: pointsHistory,
       cardTracks: cardTracks,
+      loyaltyQr: LoyaltyQr.fromJson(_asMap(pointsMap?['loyalty_qr'])),
       giftget: giftget,
     );
   }

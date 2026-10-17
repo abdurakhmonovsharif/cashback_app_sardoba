@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../app_localizations.dart';
-import '../../components/welcome_text.dart';
+import '../../components/sardoba_auth_logo.dart';
 import '../../constants.dart';
 import '../../services/auth_service.dart';
 import '../../utils/snackbar_utils.dart';
@@ -82,86 +83,157 @@ class _NumberVerifyScreenState extends State<NumberVerifyScreen> {
 
     return Scaffold(
       backgroundColor: screenBackgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(widget.title ?? strings.authOtpScreenTitle),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: titleColor,
+            size: 20,
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: defaultPadding),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            defaultPadding,
+            12,
+            defaultPadding,
+            32,
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              WelcomeText(
-                title: widget.title ?? strings.authOtpScreenTitle,
-                text: subtitle,
-              ),
-              OtpForm(
-                incorrectCodeLabel: strings.authOtpIncorrect,
-                onSubmit: (code) async {
-                  try {
-                    final success = await widget.onVerified(context, code);
-                    if (!success && context.mounted) {
-                      showNavAwareSnackBar(
-                        context,
-                        content: Text(strings.authOtpIncorrect),
-                      );
-                    }
-                    return success;
-                  } on AuthServiceException catch (error) {
-                    if (context.mounted) {
-                      showNavAwareSnackBar(
-                        context,
-                        content: Text(strings.authError(error)),
-                      );
-                    }
-                    return false;
-                  } catch (_) {
-                    if (context.mounted) {
-                      showNavAwareSnackBar(
-                        context,
-                        content: Text(strings.commonErrorTryAgain),
-                      );
-                    }
-                    return false;
-                  }
-                },
-              ),
-              const SizedBox(height: defaultPadding),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    strings.authOtpResendQuestion,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                  TextButton(
-                    onPressed: widget.onResend == null || _isResending
-                        ? null
-                        : () => _handleResend(strings),
-                    style: TextButton.styleFrom(
-                      foregroundColor: primaryColor,
+              const SizedBox(height: 8),
+              const Center(child: SardobaAuthLogo()),
+              const SizedBox(height: 24),
+              Text(
+                widget.title ?? strings.authOtpScreenTitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: titleColor,
+                          fontWeight: FontWeight.w700,
+                        ) ??
+                    const TextStyle(
+                      color: titleColor,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
                     ),
-                    child: _isResending
-                        ? const SizedBox(
-                            height: 18,
-                            width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(strings.authOtpResendCta),
-                  ),
-                ],
               ),
-              const SizedBox(height: defaultPadding),
+              const SizedBox(height: 8),
+              Text(
+                subtitle,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: bodyTextColor,
+                          height: 1.45,
+                        ) ??
+                    const TextStyle(
+                      color: bodyTextColor,
+                      fontSize: 14,
+                      height: 1.45,
+                    ),
+              ),
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadius.panel),
+                  border: const Border.fromBorderSide(
+                    BorderSide(color: appBorderColor),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: OtpForm(
+                  incorrectCodeLabel: strings.authOtpIncorrect,
+                  onSubmit: (code) async {
+                    try {
+                      final success = await widget.onVerified(context, code);
+                      if (!success && context.mounted) {
+                        showNavAwareSnackBar(
+                          context,
+                          content: Text(strings.authOtpIncorrect),
+                        );
+                      }
+                      return success;
+                    } on AuthServiceException catch (error) {
+                      if (context.mounted) {
+                        showNavAwareSnackBar(
+                          context,
+                          content: Text(strings.authError(error)),
+                        );
+                      }
+                      return false;
+                    } catch (_) {
+                      if (context.mounted) {
+                        showNavAwareSnackBar(
+                          context,
+                          content: Text(strings.commonErrorTryAgain),
+                        );
+                      }
+                      return false;
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 20),
+              Center(
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      strings.authOtpResendQuestion,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: titleColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onResend == null || _isResending
+                          ? null
+                          : () => _handleResend(strings),
+                      style: TextButton.styleFrom(
+                        foregroundColor: primaryColor,
+                        minimumSize: const Size(44, 44),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: _isResending
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Text(strings.authOtpResendCta),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               Center(
                 child: Text(
                   strings.authOtpTerms,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: bodyTextColor.withValues(alpha: 0.78),
+                        height: 1.35,
+                      ),
                 ),
               ),
-              const SizedBox(height: defaultPadding),
+              const SizedBox(height: 16),
             ],
           ),
         ),

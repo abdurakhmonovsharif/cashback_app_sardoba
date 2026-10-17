@@ -58,11 +58,55 @@ class AppStrings {
     return trimmed;
   }
 
+  // Primary navigation
+  String get navHome => _isRu ? 'Главная' : 'Asosiy';
+  String get navHomeAccessibility => _isRu ? 'Главная' : 'Bosh sahifa';
+  String get navMenu => _isRu ? 'Меню' : 'Menyu';
+  String get navLocations => _isRu ? 'Филиалы' : 'Filiallar';
+  String get navQr => _isRu ? 'QR-код' : 'QR-kod';
+
   // Home
   String get changeBranch => _isRu ? 'Сменить филиал' : 'Filialni tanlang';
   String get changeBranchSubtitle => _isRu ? 'Рядом с вами' : 'Sizga yaqin joy';
   String get searchHint =>
       _isRu ? 'Что хотите заказать?' : 'Nima isteʼmol qilmoqchisiz?';
+  String get searchAction => _isRu ? 'Поиск' : 'Qidirish';
+  String get searchStartTitle =>
+      _isRu ? 'Найдите блюдо в меню' : 'Menyudan taomni toping';
+  String get searchStartSubtitle => _isRu
+      ? 'Введите название блюда или напитка.'
+      : 'Taom yoki ichimlik nomini kiriting.';
+  String get searchNoResultsTitle =>
+      _isRu ? 'Ничего не найдено' : 'Hech narsa topilmadi';
+  String get searchNoResultsSubtitle => _isRu
+      ? 'Попробуйте изменить запрос.'
+      : 'Qidiruv so‘zini o‘zgartirib ko‘ring.';
+  String searchResultCount(int count) =>
+      _isRu ? 'Найдено: $count' : 'Topilgan: $count';
+  String get searchLoading => _isRu ? 'Идёт поиск...' : 'Qidirilmoqda...';
+  String bannerSlide(int slide, int count) =>
+      _isRu ? 'Баннер $slide из $count' : 'Banner $slide / $count';
+  String get bannerPause =>
+      _isRu ? 'Приостановить баннеры' : 'Bannerlarni to‘xtatish';
+  String get bannerPlay =>
+      _isRu ? 'Продолжить баннеры' : 'Bannerlarni davom ettirish';
+  String get homeBannerOpenMenu => _isRu ? 'Смотреть меню' : 'Menyuni ko‘rish';
+  String homeBannerTitle(int index) => switch (index) {
+        0 => _isRu ? 'Вкус, который объединяет' : 'Birlashtiradigan taʼm',
+        1 => _isRu ? 'Любимые блюда рядом' : 'Sevimli taomlar yoningizda',
+        _ => _isRu ? 'Откройте меню Sardoba' : 'Sardoba menyusini kashf eting',
+      };
+  String homeBannerSubtitle(int index) => switch (index) {
+        0 => _isRu
+            ? 'Традиционные блюда. Настоящие эмоции.'
+            : 'Anʼanaviy taomlar. Haqiqiy taassurotlar.',
+        1 => _isRu
+            ? 'Выберите то, что хочется сегодня.'
+            : 'Bugun xohlagan taomingizni tanlang.',
+        _ => _isRu
+            ? 'Выберите блюдо по душе.'
+            : 'Ko‘nglingizga yoqqan taomni tanlang.',
+      };
   String get deliveryTimeLabel =>
       _isRu ? 'Доставка за 25 минут' : '25 daqiqada yetkazib berish';
   String get cashbackHeroEyebrow =>
@@ -81,9 +125,10 @@ class AppStrings {
   String get orderPickupDescription => _isRu
       ? 'Будет готово через 15–20 минут'
       : '15–20 daqiqa ichida tayyor bo‘ladi';
-  String get categoryAll => _isRu ? 'Все' : 'Barchasi';
   String get popularFoodsTitle =>
       _isRu ? 'Популярные блюда' : 'Mashhur taomlar';
+  String get homeMenuPreviewTitle => _isRu ? 'Из меню' : 'Menyudan';
+  String get categoriesTitle => _isRu ? 'Категории' : 'Kategoriyalar';
   String get viewAll => _isRu ? 'Все' : 'Barchasi';
   String get loyaltyTitle => _isRu ? 'Баллы' : 'Ballar';
   String get offersTitle => _isRu ? 'Предложения' : 'Takliflar';
@@ -152,6 +197,12 @@ class AppStrings {
       ? 'Следите за количеством баллов и историей.'
       : 'Ballar soni va tarixini kuzating.';
   String get pointsViewButton => _isRu ? 'Посмотреть' : 'Ko‘rish';
+  String pointsWalletThreshold(String threshold) => _isRu
+      ? 'Использование баллов доступно от $threshold баллов'
+      : 'Ballardan $threshold ball yig‘ilgandan boshlab foydalanish mumkin';
+  String pointsWalletRemaining(String remaining) => _isRu
+      ? 'До использования осталось $remaining баллов'
+      : 'Foydalanish uchun yana $remaining ball kerak';
   String get pointsViewLocked => _isRu ? 'Недоступно' : 'Mavjud emas';
   String get pointsHistoryTitle => _isRu ? 'История баллов' : 'Ballar tarixi';
   String get pointsHistoryDemoLabel =>
@@ -182,6 +233,20 @@ class AppStrings {
 
   String get pointsHistoryAdded => _isRu ? 'Зачислено' : 'Qoʻshildi';
   String get pointsHistorySpent => _isRu ? 'Списано' : 'Sarflandi';
+  String get pointsFilterAll => _isRu ? 'Все' : 'Barchasi';
+  String get pointsFilterCredit => _isRu ? 'Начислено' : 'Qo‘shilgan';
+  String get pointsFilterDebit => _isRu ? 'Списано' : 'Sarflangan';
+  String get pointsPeriodAll => _isRu ? 'Всё время' : 'Barcha vaqt';
+  String get pointsPeriodSevenDays => _isRu ? '7 дней' : '7 kun';
+  String get pointsPeriodThirtyDays => _isRu ? '30 дней' : '30 kun';
+  String get pointsPeriodCustom => _isRu ? 'Выбрать даты' : 'Sanani tanlash';
+  String get pointsSummaryCredit => _isRu ? 'Начислено' : 'Qo‘shildi';
+  String get pointsSummaryDebit => _isRu ? 'Списано' : 'Sarflandi';
+  String get pointsToday => _isRu ? 'Сегодня' : 'Bugun';
+  String get pointsYesterday => _isRu ? 'Вчера' : 'Kecha';
+  String get pointsLoadMoreError => _isRu
+      ? 'Не удалось загрузить следующие операции.'
+      : 'Keyingi operatsiyalarni yuklab bo‘lmadi.';
 
   String get languageSheetTitle => _isRu ? 'Выберите язык' : 'Tilni tanlang';
   String get commonCancel => _isRu ? 'Отмена' : 'Bekor qilish';
@@ -193,6 +258,7 @@ class AppStrings {
       : 'Xatolik yuz berdi. Qayta urinib koʻring.';
   String get commonLoading => _isRu ? 'Загрузка...' : 'Yuklanmoqda...';
   String get commonRetry => _isRu ? 'Повторить' : 'Qayta urinish';
+  String get commonHistoryAction => _isRu ? 'История' : 'Tarix';
 
   // Catalog
   String get catalogTitle => _isRu ? 'Каталог' : 'Katalog';
@@ -200,8 +266,13 @@ class AppStrings {
       _isRu ? 'Выбранный филиал' : 'Tanlangan filial';
   String get catalogUnavailableInBranch =>
       _isRu ? 'Нет в выбранном филиале' : 'Tanlangan filialda mavjud emas';
+  String get catalogAvailableStatus => _isRu ? 'В наличии' : 'Mavjud';
   String get catalogTemporarilyDisabled =>
       _isRu ? 'Временно недоступно' : 'Hozircha mavjud emas';
+  String get catalogTemporarilyDisabledCompact =>
+      _isRu ? 'Пока нет' : 'Hozircha yo‘q';
+  String get catalogUnavailableInBranchCompact =>
+      _isRu ? 'Нет в филиале' : 'Filialda yo‘q';
   String get catalogEmpty =>
       _isRu ? 'Здесь пока пусто' : 'Hozircha hech narsa yoʻq';
   String get catalogLoadError =>
@@ -217,14 +288,24 @@ class AppStrings {
   String get locationsListHeader =>
       _isRu ? 'Список филиалов' : 'Filiallar roʻyxati';
   String get locationsSearchHint =>
-      _isRu ? 'Поиск филиала...' : 'Filial qidirish...';
+      _isRu ? 'Поиск филиала или адреса' : 'Filial yoki manzilni qidiring';
+  String get locationUseCurrent =>
+      _isRu ? 'Моё местоположение' : 'Joriy joylashuvim';
+  String get locationNearby => _isRu ? 'Рядом' : 'Yaqin atrofda';
+  String get locationOpenNow => _isRu ? 'Открыто сейчас' : 'Hozir ochiq';
+  String get locationSortedNearby =>
+      _isRu ? 'Сначала ближайшие' : 'Avval eng yaqinlari';
+  String get clearSearch => _isRu ? 'Очистить поиск' : 'Qidiruvni tozalash';
   String get locationsEmpty =>
       _isRu ? 'Филиалы не найдены' : 'Filial topilmadi';
-  String get openNow => _isRu ? 'Открыто' : 'Ochiq';
   String get dailySchedule =>
       _isRu ? 'Ежедневно 09:00 - 23:00' : 'Har kuni 09:00 - 23:00';
   String get showOnMap => _isRu ? 'Показать на карте' : 'Xaritada koʻrsatish';
   String get locationsDirectionsButton => _isRu ? 'Маршрут' : 'Yoʻnalish';
+  String get locationsZoomIn =>
+      _isRu ? 'Увеличить карту' : 'Xaritani kattalashtirish';
+  String get locationsZoomOut =>
+      _isRu ? 'Уменьшить карту' : 'Xaritani kichraytirish';
   String get locationsDirectionsError => _isRu
       ? 'Не удалось открыть приложение карт.'
       : 'Xarita ilovasini ochib boʻlmadi.';
@@ -249,6 +330,11 @@ class AppStrings {
   // Profile
   String get profileTitle => _isRu ? 'Профиль' : 'Profil';
   String get profileGuestName => _isRu ? 'Гость' : 'Mehmon';
+  String get profileGuestLoginCta =>
+      _isRu ? 'Войти / Зарегистрироваться' : 'Kirish / Roʻyxatdan oʻtish';
+  String get profileGuestDescription => _isRu
+      ? 'Войдите, чтобы видеть бонусы.'
+      : 'Bonuslarni ko‘rish uchun kiring.';
   String profileTierBadge(String tier) =>
       _isRu ? '$tier участник' : '$tier darajasi';
   String get profileAccountSection =>
@@ -260,14 +346,33 @@ class AppStrings {
   String get profileInfoMenuSubtitle => _isRu
       ? 'Измените имя, дату рождения'
       : 'Ism, tugʻilgan sanangizni yangilang';
-  String get profilePinMenuTitle =>
-      _isRu ? 'Сменить PIN' : 'PIN kodni almashtirish';
-  String get profilePinMenuSubtitle =>
-      _isRu ? 'Обновите защиту аккаунта' : 'Profil xavfsizligini yangilang';
+  String get profilePinMenuTitle => _isRu ? 'PIN-код' : 'PIN-kod';
+  String get profilePinMenuSubtitle => _isRu
+      ? 'Установить или изменить PIN'
+      : 'PIN-kodni o‘rnatish yoki almashtirish';
   String get profileNotificationsMenuTitle =>
       _isRu ? 'Уведомления' : 'Bildirishnomalar';
   String get profileNotificationsMenuSubtitle =>
       _isRu ? 'История и настройки рассылок' : 'Tarix va xabarnoma sozlamalari';
+  String get notificationSettingsAction =>
+      _isRu ? 'Настройки уведомлений' : 'Bildirishnoma sozlamalari';
+  String get notificationSettingsPageTitle =>
+      _isRu ? 'Настройки уведомлений' : 'Bildirishnoma sozlamalari';
+  String get pinKeypadBackspace =>
+      _isRu ? 'Удалить последнюю цифру' : 'Oxirgi raqamni oʻchirish';
+  String pinDigitsProgress(int current, int total) => _isRu
+      ? 'Введено цифр: $current из $total'
+      : 'Kiritilgan raqamlar: $current / $total';
+  String get profilePhoneReadonlyHint => _isRu
+      ? 'Номер телефона нельзя изменить здесь'
+      : 'Telefon raqamini bu yerda oʻzgartirib boʻlmaydi';
+  String catalogFavoriteAdd(String name) =>
+      _isRu ? 'Добавить $name в избранное' : '$name ni sevimlilarga qoʻshish';
+  String catalogFavoriteRemove(String name) => _isRu
+      ? 'Убрать $name из избранного'
+      : '$name ni sevimlilardan olib tashlash';
+  String locationDirectionsFor(String name) =>
+      _isRu ? 'Маршрут до филиала $name' : '$name filialiga yoʻnalish';
   String get profileHelpMenuTitle =>
       _isRu ? 'Справка и поддержка' : 'Qoʻllab-quvvatlash';
   String get profileHelpMenuSubtitle =>
@@ -407,6 +512,8 @@ class AppStrings {
       ? 'Войдите, чтобы управлять профилем.'
       : 'Profil sozlamalari uchun tizimga kiring.';
   String get profileDobLabel => _isRu ? 'Дата рождения' : 'Tugʻilgan sana';
+  String get profileDobPickerHint =>
+      _isRu ? 'Выберите дату рождения' : 'Tugʻilgan sanani tanlang';
   String get profileDobPlaceholder =>
       _isRu ? 'Выберите дату' : 'Sanani tanlang';
   String get profileDobValidation =>
@@ -476,10 +583,15 @@ class AppStrings {
   // QR
   String get qrScreenTitle => _isRu ? 'Мой QR-код' : 'Mening QR-kodim';
   String get qrScreenInstruction =>
-      _isRu ? 'Покажите этот код на кассе.' : 'Ushbu kodni kassaga ko‘rsating.';
+      _isRu ? 'Покажите QR-код кассиру' : 'QR-kodni kassirga ko‘rsating';
+  String get qrScreenExplanation => _isRu
+      ? 'Для начисления баллов за покупку.'
+      : 'Xarid uchun ball olish uchun.';
   String get qrScreenFooter => _isRu
-      ? 'QR-код связывает ваш аккаунт и номер телефона для начисления баллов.'
-      : 'QR-kod hisobingizni telefon raqamingiz bilan bog‘laydi va ballarni tezroq qo‘shadi.';
+      ? 'Держите код на экране, пока кассир его сканирует.'
+      : 'Kassir skanerlaguncha kodni ekranda saqlang.';
+  String get qrScreenCodeSemantics =>
+      _isRu ? 'QR-код для начисления баллов' : 'Ball olish uchun QR-kod';
   String get qrScreenAccountFallback =>
       _isRu ? 'Ваш аккаунт' : 'Sizning hisobingiz';
   String get qrScreenPhoneMissingTitle =>
@@ -492,10 +604,22 @@ class AppStrings {
   String get qrScreenErrorSubtitle =>
       _isRu ? 'Попробуйте чуть позже.' : 'Birozdan so‘ng qayta urinib ko‘ring.';
 
+  String get qrScreenPendingTitle =>
+      _isRu ? 'Карта готовится' : 'Karta tayyorlanmoqda';
+  String get qrScreenPendingSubtitle => _isRu
+      ? 'Подтверждаем карту. QR-код появится после проверки.'
+      : 'Karta tasdiqlanmoqda. Tekshiruv tugagach QR-kod paydo bo‘ladi.';
+  String get qrScreenUnavailableTitle =>
+      _isRu ? 'QR-код пока недоступен' : 'QR-kod hozircha mavjud emas';
+  String get qrScreenUnavailableSubtitle => _isRu
+      ? 'Не удалось подтвердить карту. Повторите проверку позже или обратитесь в поддержку.'
+      : 'Kartani tasdiqlab bo‘lmadi. Keyinroq qayta tekshiring yoki yordam xizmatiga murojaat qiling.';
+
   // Forms & Auth
   String get authEnterPhone =>
       _isRu ? 'Введите телефон' : 'Telefon raqamingizni kiriting';
   String get authPhoneHint => _isRu ? '+998 90 123 45 67' : '+998 90 123 45 67';
+  String get authPhoneLocalHint => _isRu ? '90 123 45 67' : '90 123 45 67';
   String get authOtpInfoLogin => _isRu
       ? 'Мы отправим 4-значный код на этот номер.'
       : 'Ushbu raqamga 4 xonali kod yuboramiz.';
@@ -525,6 +649,10 @@ class AppStrings {
   String get authSignInSubtitle => _isRu
       ? 'Введите номер телефона, чтобы получить код подтверждения.'
       : 'Tasdiqlash kodini olish uchun telefon raqamingizni kiriting.';
+  String get authSignInTitle => _isRu ? 'С возвращением' : 'Xush kelibsiz';
+  String get authPhoneInvalid => _isRu
+      ? 'Введите 9 цифр после +998'
+      : '+998 dan keyin 9 ta raqam kiriting';
   String get authNoAccountQuestion =>
       _isRu ? 'Ещё нет аккаунта?' : 'Hali akkauntingiz yoʻqmi?';
   String get authCreateAccountCta =>

@@ -52,7 +52,7 @@ class _NotificationSettingsScreenState
         elevation: 0,
         scrolledUnderElevation: 0,
         title: Text(
-          l10n.notificationsTitle,
+          l10n.notificationSettingsPageTitle,
           style: theme.textTheme.titleLarge?.copyWith(
             color: titleColor,
             fontWeight: FontWeight.w700,
@@ -90,7 +90,8 @@ class _NotificationSettingsScreenState
                         ),
                         _NotificationToggleTile(
                           label: l10n.notificationSettingsEmailTitle,
-                          description: l10n.notificationSettingsEmailDescription,
+                          description:
+                              l10n.notificationSettingsEmailDescription,
                           value: _prefs.emailEnabled,
                           onChanged: _prefs.setEmailEnabled,
                         ),
@@ -102,7 +103,8 @@ class _NotificationSettingsScreenState
                       children: [
                         _NotificationToggleTile(
                           label: l10n.notificationSettingsPointsTitle,
-                          description: l10n.notificationSettingsPointsDescription,
+                          description:
+                              l10n.notificationSettingsPointsDescription,
                           value: _prefs.pointsUpdates,
                           onChanged: _prefs.setPointsUpdates,
                         ),
@@ -138,7 +140,7 @@ class _NotificationCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -147,7 +149,7 @@ class _NotificationCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.all(defaultPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -192,54 +194,56 @@ class _NotificationToggleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FA),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: titleColor,
-                    fontWeight: FontWeight.w600,
+    return MergeSemantics(
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F8FA),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: titleColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: bodyTextColor,
-                    height: 1.35,
+                  const SizedBox(height: 6),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: bodyTextColor,
+                      height: 1.35,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            thumbColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return primaryColor;
-              }
-              return Colors.white;
-            }),
-            trackColor: WidgetStateProperty.resolveWith((states) {
-              if (states.contains(WidgetState.selected)) {
-                return primaryColor.withValues(alpha: 0.3);
-              }
-              return Colors.black.withValues(alpha: 0.1);
-            }),
-          ),
-        ],
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              thumbColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return primaryColor;
+                }
+                return Colors.white;
+              }),
+              trackColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return primaryColor.withValues(alpha: 0.3);
+                }
+                return Colors.black.withValues(alpha: 0.1);
+              }),
+            ),
+          ],
+        ),
       ),
     );
   }

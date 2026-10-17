@@ -9,6 +9,9 @@ import '../../models/account.dart';
 import '../../models/branch.dart';
 import '../../models/catalog.dart';
 import '../../components/branch_picker_sheet.dart';
+import '../../components/points_balance_card.dart';
+import '../../components/inline_price_text.dart';
+import '../catalog/product_detail_images.dart';
 import '../../services/account_stream.dart';
 import '../../services/auth_storage.dart';
 import '../../services/branch_state.dart';
@@ -20,45 +23,32 @@ import '../../services/notification_socket_service.dart';
 import '../../models/app_notification.dart';
 import '../catalog/catalog_screen.dart';
 import '../catalog/product_details_screen.dart';
-import '../locations/locations_screen.dart';
+import '../auth/sign_in_screen.dart';
+// import '../locations/locations_screen.dart'; // Restore with pickup below.
 import '../points/points_screen.dart';
 import '../notifications/notifications_screen.dart';
-import '../qr/qr_screen.dart';
 import '../search/search_screen.dart';
+import 'components/home_banner_balance_layout.dart';
+import 'components/home_banner_carousel.dart';
+import 'components/home_category_strip.dart';
 
-const AssetImage _kDeliveryScooterImage =
-    AssetImage('assets/images/home_design_scooter.webp');
-const AssetImage _kPickupBagImage =
-    AssetImage('assets/images/home_design_bag.webp');
+// Fulfillment is paused. Its assets are kept outside the bundled directories.
+// Restore these declarations and the pubspec entry together with the section.
+// const AssetImage _kDeliveryScooterImage =
+//     AssetImage('assets/disabled/fulfillment/home_design_scooter.webp');
+// const AssetImage _kPickupBagImage =
+//     AssetImage('assets/disabled/fulfillment/home_design_bag.webp');
 
-const Color _kHomeIvory = Color(0xFFFBF7EF);
-const Color _kHomePrimaryGreen = Color(0xFF0B5E3C);
-const Color _kHomeDarkGreen = Color(0xFF064E3B);
+const Color _kHomePrimaryGreen = primaryColor;
 const Color _kHomeAccentGreen = Color(0xFF0F8F4D);
-const Color _kHomeAccentOrange = Color(0xFFF59E0B);
-const Color _kHomeBorder = Color(0xFFE8E2D6);
+// const Color _kHomeAccentOrange = Color(0xFFF59E0B); // Fulfillment only.
+const Color _kHomeBorder = appBorderColor;
 const Color _kHomeTextPrimary = Color(0xFF111827);
 const Color _kHomeTextSecondary = Color(0xFF6B7280);
 
 class _HomeBreakpoints {
   static const compact = 360.0;
-  static const normal = 390.0;
-  static const large = 430.0;
-
-  static double pagePadding(double width) {
-    if (width < compact) return 14;
-    if (width < normal) return 16;
-    if (width < large) return 18;
-    return 20;
-  }
-
-  static double productCardWidth(double width) {
-    if (width < compact) return 136;
-    if (width < normal) return 140;
-    return 142;
-  }
-
-  static bool stackFulfillmentCards(double contentWidth) => contentWidth < 340;
+  // static bool stackFulfillmentCards(double contentWidth) => contentWidth < 340;
 }
 
 class HomeScreen extends StatefulWidget {
@@ -69,12 +59,20 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  final _menuPreviewKey = GlobalKey<_HomeMenuPreviewState>();
+
   Future<void> _refreshHome() async {
-    final account = await SessionSyncService.instance.sync();
-    if (account != null) {
-      // Emit the latest profile (including points) to listening widgets.
-      await AuthStorage.instance.updateCurrentAccount(account);
-    }
+    final preview = _menuPreviewKey.currentState;
+    await Future.wait<void>([
+      () async {
+        final account = await SessionSyncService.instance.sync();
+        if (account != null) {
+          // Emit the latest profile (including points) to listening widgets.
+          await AuthStorage.instance.updateCurrentAccount(account);
+        }
+      }(),
+      if (preview != null) preview.refreshCatalog(),
+    ]);
   }
 
   Future<void> _openSearch() async {
@@ -84,14 +82,21 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openDeliveryFlow() {
-    final handled = EntryPoint.selectTab(context, 1);
+    _openCatalogCategory(null);
+  }
+
+  void _openCatalogCategory(String? categoryId) {
+    final handled = EntryPoint.openCatalog(context, categoryId: categoryId);
     if (!handled) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const CatalogScreen()),
+        MaterialPageRoute(
+          builder: (_) => CatalogScreen(initialCategoryId: categoryId),
+        ),
       );
     }
   }
 
+  /* Fulfillment is paused; keep this route for reactivation.
   Future<void> _openPickupFlow() async {
     final handled = EntryPoint.showShellScreen(
       context,
@@ -104,76 +109,71 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openQrScreen() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const QrScreen()),
-    );
-  }
+  */
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    final pageHorizontalPadding = _HomeBreakpoints.pagePadding(screenWidth);
+    // Match Profile's shared page inset on every phone size.
+    const pageHorizontalPadding = defaultPadding;
     final double scrollBottomPadding =
-        navAwareBottomPadding(context, extra: 18);
-    final isSmallPhone = screenWidth <= 375 || screenHeight <= 700;
+        navAwareBottomPadding(context, extra: 16);
 
     return Scaffold(
-      backgroundColor: _kHomeIvory,
-      body: MediaQuery(
-        data: MediaQuery.of(context).copyWith(
-          textScaler: const TextScaler.linear(0.92),
-        ),
-        child: SafeArea(
-          top: true,
-          bottom: false,
-          child: RefreshIndicator(
-            color: primaryColor,
-            onRefresh: _refreshHome,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(
-                parent: BouncingScrollPhysics(),
-              ),
-              padding: EdgeInsets.fromLTRB(
-                pageHorizontalPadding,
-                6,
-                pageHorizontalPadding,
-                scrollBottomPadding,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RepaintBoundary(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const RepaintBoundary(child: _HomeHeader()),
-                        SizedBox(height: isSmallPhone ? 12 : 14),
-                        _HomeSearchBar(
-                          onTap: _openSearch,
-                          onFilterTap: _openSearch,
+      body: SafeArea(
+        top: true,
+        bottom: false,
+        child: RefreshIndicator(
+          color: primaryColor,
+          onRefresh: _refreshHome,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              pageHorizontalPadding,
+              4,
+              pageHorizontalPadding,
+              scrollBottomPadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                RepaintBoundary(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const RepaintBoundary(child: _HomeHeader()),
+                      const SizedBox(height: AppSpacing.related),
+                      _HomeSearchBar(
+                        onTap: _openSearch,
+                      ),
+                      const SizedBox(height: AppSpacing.related),
+                      HomeBannerBalanceLayout(
+                        banner: RepaintBoundary(
+                          child: HomeBannerCarousel(
+                            onOpenMenu: _openDeliveryFlow,
+                          ),
                         ),
-                        SizedBox(height: isSmallPhone ? 12 : 14),
-                        _OrderMethodSection(
-                          onDeliveryTap: _openDeliveryFlow,
-                          onPickupTap: _openPickupFlow,
-                        ),
-                        SizedBox(height: isSmallPhone ? 12 : 14),
-                        _QrPaymentRow(onTap: _openQrScreen),
-                        SizedBox(height: isSmallPhone ? 12 : 14),
-                        const _LoyaltyStats(),
-                      ],
-                    ),
+                        balance: const _LoyaltyStats(),
+                      ),
+                      // Fulfillment is paused. Keep the section and its
+                      // spacing out of the tree (no layout or image cost).
+                      // _OrderMethodSection(
+                      //   onDeliveryTap: _openDeliveryFlow,
+                      //   onPickupTap: _openPickupFlow,
+                      // ),
+                    ],
                   ),
-                  SizedBox(height: isSmallPhone ? 18 : 20),
-                  _HomeMenuPreview(
-                    onViewAll: _openDeliveryFlow,
-                  ),
-                  // const SizedBox(height: 18),
-                  // _ActiveOrderCard(onTrack: _openDeliveryFlow),
-                ],
-              ),
+                ),
+                const SizedBox(height: AppSpacing.section),
+                _HomeMenuPreview(
+                  key: _menuPreviewKey,
+                  onViewAll: _openDeliveryFlow,
+                  onCategorySelected: _openCatalogCategory,
+                ),
+                // const SizedBox(height: 18),
+                // _ActiveOrderCard(onTrack: _openDeliveryFlow),
+              ],
             ),
           ),
         ),
@@ -285,6 +285,9 @@ class _HomeHeaderState extends State<_HomeHeader>
     final l10n = AppLocalizations.of(context);
     final branchLabel =
         l10n.locale == AppLocale.ru ? 'Выбранный филиал' : 'Tanlangan filial';
+    final textScaler = MediaQuery.textScalerOf(context);
+    final branchLabelMaxLines = textScaler.scale(12) > 12 ? null : 1;
+    final branchNameMaxLines = textScaler.scale(17) > 17 ? null : 1;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -305,7 +308,7 @@ class _HomeHeaderState extends State<_HomeHeader>
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: _openBranchPicker,
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(AppRadius.control),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 4,
@@ -323,13 +326,15 @@ class _HomeHeaderState extends State<_HomeHeader>
                                   ),
                                   child: Text(
                                     branchLabel,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: branchLabelMaxLines,
+                                    overflow: branchLabelMaxLines == null
+                                        ? null
+                                        : TextOverflow.ellipsis,
                                     style: theme.textTheme.bodySmall?.copyWith(
                                       color: _kHomePrimaryGreen,
                                       fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.1,
+                                      fontWeight: FontWeight.w400,
+                                      height: 15 / 12,
                                     ),
                                   ),
                                 ),
@@ -350,15 +355,18 @@ class _HomeHeaderState extends State<_HomeHeader>
                                     ),
                                     child: Text(
                                       _displayBranchName(_activeBranch.name),
-                                      maxLines: 1,
+                                      maxLines: branchNameMaxLines,
                                       style:
                                           theme.textTheme.titleMedium?.copyWith(
                                         color: _kHomeTextPrimary,
-                                        fontSize: 21,
-                                        fontWeight: FontWeight.w800,
-                                        height: 1.1,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: 0,
+                                        height: 22 / 17,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
+                                      overflow: branchNameMaxLines == null
+                                          ? null
+                                          : TextOverflow.ellipsis,
                                     ),
                                   ),
                                   const SizedBox(width: 4),
@@ -394,6 +402,7 @@ class _HomeHeaderState extends State<_HomeHeader>
             icon: Icons.notifications_none_rounded,
             onTap: _openNotifications,
             badgeCount: _unreadCount,
+            tooltip: l10n.notificationsTitle,
           ),
         ),
       ],
@@ -406,61 +415,60 @@ class _HeaderActionButton extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.badgeCount = 0,
+    required this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback onTap;
   final int badgeCount;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
     final hasBadge = badgeCount > 0;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _kHomeBorder.withValues(alpha: 0.72),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.control),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+              border: Border.all(
+                color: _kHomeBorder.withValues(alpha: 0.72),
               ),
-            ],
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            alignment: Alignment.center,
-            children: [
-              Icon(icon, color: _kHomeTextPrimary, size: 24),
-              if (hasBadge)
-                Positioned(
-                  right: 7,
-                  top: 7,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _kHomeAccentGreen,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 1.3,
+              boxShadow: const [appCardShadow],
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Icon(icon, color: _kHomeTextPrimary, size: 24),
+                if (hasBadge)
+                  Positioned(
+                    right: 7,
+                    top: 7,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: _kHomeAccentGreen,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 1.3,
+                        ),
                       ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -471,11 +479,9 @@ class _HeaderActionButton extends StatelessWidget {
 class _HomeSearchBar extends StatelessWidget {
   const _HomeSearchBar({
     required this.onTap,
-    required this.onFilterTap,
   });
 
   final VoidCallback onTap;
-  final VoidCallback onFilterTap;
 
   @override
   Widget build(BuildContext context) {
@@ -487,54 +493,43 @@ class _HomeSearchBar extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          height: 56,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(color: _kHomeBorder),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.045),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const SizedBox(width: 17),
-              const Icon(
-                Icons.search_rounded,
-                color: _kHomeTextSecondary,
-                size: 26,
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Text(
-                  hint,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: _kHomeTextSecondary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 50),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _kHomeBorder),
+            ),
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                const Icon(
+                  Icons.search_rounded,
+                  color: _kHomeTextSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    hint,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: _kHomeTextSecondary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w400,
+                      letterSpacing: 0,
+                    ),
                   ),
                 ),
-              ),
-              IconButton(
-                onPressed: onFilterTap,
-                icon: const Icon(Icons.tune_rounded),
-                color: _kHomeTextPrimary,
-                iconSize: 25,
-                tooltip: l10n.locale == AppLocale.ru ? 'Фильтр' : 'Filter',
-              ),
-              const SizedBox(width: 5),
-            ],
+                const SizedBox(width: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -542,6 +537,7 @@ class _HomeSearchBar extends StatelessWidget {
   }
 }
 
+/* Fulfillment widgets retained for reactivation. No runtime code while paused.
 class _OrderMethodSection extends StatelessWidget {
   const _OrderMethodSection({
     required this.onDeliveryTap,
@@ -963,111 +959,7 @@ class _CompactOrderMethodContent extends StatelessWidget {
   }
 }
 
-class _QrPaymentRow extends StatelessWidget {
-  const _QrPaymentRow({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final l10n = AppLocalizations.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final isSmallPhone = size.width <= 375 || size.height <= 700;
-    final height = isSmallPhone ? 56.0 : 64.0;
-    final iconSize = isSmallPhone ? 40.0 : 46.0;
-    final title =
-        l10n.locale == AppLocale.ru ? 'Оплата через QR' : 'QR orqali to‘lash';
-    final subtitle = l10n.locale == AppLocale.ru
-        ? 'Быстрая и безопасная оплата'
-        : 'Tez va xavfsiz to‘lov';
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
-          height: height,
-          padding: EdgeInsets.symmetric(horizontal: isSmallPhone ? 14 : 18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _kHomeBorder),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.045),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: iconSize,
-                height: iconSize,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(13),
-                  gradient: const LinearGradient(
-                    colors: [_kHomePrimaryGreen, _kHomeDarkGreen],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.qr_code_rounded,
-                  color: Colors.white,
-                  size: 26,
-                ),
-              ),
-              SizedBox(width: isSmallPhone ? 12 : 16),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: _kHomeTextPrimary,
-                        fontSize: isSmallPhone ? 14 : 16,
-                        fontWeight: FontWeight.w800,
-                        height: 1.1,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      subtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: _kHomeTextSecondary,
-                        fontSize: isSmallPhone ? 12 : 13,
-                        fontWeight: FontWeight.w500,
-                        height: 1.1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: _kHomeTextPrimary,
-                size: isSmallPhone ? 24 : 28,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+*/
 
 class _ShimmerSkeleton extends StatefulWidget {
   const _ShimmerSkeleton({
@@ -1187,7 +1079,7 @@ class _ActiveOrderCard extends StatelessWidget {
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),
@@ -1296,7 +1188,7 @@ class _ActiveOrderCard extends StatelessWidget {
                           foregroundColor: primaryColor,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(22),
+                            borderRadius: BorderRadius.circular(AppRadius.card),
                           ),
                         ),
                         child: Row(
@@ -1377,9 +1269,14 @@ class _OrderRoutePainter extends CustomPainter {
 }
 
 class _HomeMenuPreview extends StatefulWidget {
-  const _HomeMenuPreview({required this.onViewAll});
+  const _HomeMenuPreview({
+    super.key,
+    required this.onViewAll,
+    required this.onCategorySelected,
+  });
 
   final VoidCallback onViewAll;
+  final ValueChanged<String?> onCategorySelected;
 
   @override
   State<_HomeMenuPreview> createState() => _HomeMenuPreviewState();
@@ -1388,28 +1285,31 @@ class _HomeMenuPreview extends StatefulWidget {
 class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
   final CatalogRepository _catalogRepository = CatalogRepository.instance;
   final BranchState _branchState = BranchState.instance;
+  final ScrollController _productsController =
+      ScrollController(keepScrollOffset: false);
 
   late Branch _activeBranch;
   List<CatalogCategory> _categories = const [];
   List<_OfferEntry> _entries = const [];
   bool _isLoading = true;
   String? _errorMessage;
-  int _activeCategoryIndex = 0;
+  int _catalogLoadVersion = 0;
 
   @override
   void initState() {
     super.initState();
     _activeBranch = _branchState.activeBranch;
     _branchState.addListener(_handleBranchChange);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _applyCachedCatalog();
-      _loadCatalog();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _applyCachedCatalog();
+      await _loadCatalog();
     });
   }
 
   @override
   void dispose() {
     _branchState.removeListener(_handleBranchChange);
+    _productsController.dispose();
     super.dispose();
   }
 
@@ -1418,11 +1318,16 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
     if (!mounted || branch.id == _activeBranch.id) return;
     setState(() {
       _activeBranch = branch;
-      _activeCategoryIndex = 0;
     });
-    _applyCachedCatalog();
-    _loadCatalog();
+    _reloadForBranch();
   }
+
+  Future<void> _reloadForBranch() async {
+    await _applyCachedCatalog();
+    await _loadCatalog();
+  }
+
+  Future<void> refreshCatalog() => _loadCatalog(forceRefresh: true);
 
   Future<void> _applyCachedCatalog() async {
     final cached = await _catalogRepository.getCachedCatalog();
@@ -1432,6 +1337,7 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
 
   Future<void> _loadCatalog({bool forceRefresh = false}) async {
     if (!mounted) return;
+    final loadVersion = ++_catalogLoadVersion;
     setState(() {
       if (_entries.isEmpty || forceRefresh) {
         _isLoading = true;
@@ -1442,10 +1348,10 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
       final payload = await _catalogRepository.loadCatalog(
         forceRefresh: forceRefresh,
       );
-      if (!mounted) return;
+      if (!mounted || loadVersion != _catalogLoadVersion) return;
       _applyPayload(payload, isLoading: false);
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || loadVersion != _catalogLoadVersion) return;
       setState(() {
         _errorMessage = error.toString();
         _isLoading = false;
@@ -1473,21 +1379,55 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
 
     setState(() {
       _categories = visibleCategories;
-      _entries = entries;
-      if (_activeCategoryIndex > visibleCategories.length) {
-        _activeCategoryIndex = 0;
-      }
+      _entries = _orderedHomeEntries(entries);
       _isLoading = isLoading;
       _errorMessage = null;
     });
   }
 
-  List<_OfferEntry> get _visibleEntries {
-    if (_activeCategoryIndex == 0) return _entries;
-    final category = _categories[_activeCategoryIndex - 1];
-    return _entries
-        .where((entry) => entry.category.id == category.id)
-        .toList(growable: false);
+  List<_OfferEntry> _orderedHomeEntries(List<_OfferEntry> entries) {
+    final entriesByCategory = <String, List<_OfferEntry>>{};
+    final categoryById = <String, CatalogCategory>{};
+    for (final entry in entries) {
+      entriesByCategory.putIfAbsent(entry.category.id, () => []).add(entry);
+      categoryById[entry.category.id] = entry.category;
+    }
+
+    final categoryIds = entriesByCategory.keys.toList();
+    String? firstCoursesId;
+    for (final categoryId in categoryIds) {
+      final category = categoryById[categoryId]!;
+      if (category.slug.toLowerCase().contains('pervye') ||
+          category.name.toLowerCase().contains('первые блюда')) {
+        firstCoursesId = categoryId;
+        break;
+      }
+    }
+    if (firstCoursesId != null) {
+      categoryIds.remove(firstCoursesId);
+    }
+
+    final ordered = <_OfferEntry>[];
+    final nextIndexByCategory = <String, int>{};
+    void takeFrom(String? categoryId) {
+      if (categoryId == null) return;
+      final categoryEntries = entriesByCategory[categoryId];
+      final nextIndex = nextIndexByCategory[categoryId] ?? 0;
+      if (categoryEntries == null || nextIndex >= categoryEntries.length) {
+        return;
+      }
+      ordered.add(categoryEntries[nextIndex]);
+      nextIndexByCategory[categoryId] = nextIndex + 1;
+    }
+
+    while (ordered.length < entries.length) {
+      takeFrom(firstCoursesId);
+      for (final categoryId in categoryIds) {
+        takeFrom(categoryId);
+      }
+      takeFrom(firstCoursesId);
+    }
+    return ordered;
   }
 
   String _formatPrice(double value, bool isRu) {
@@ -1514,6 +1454,48 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
     );
   }
 
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title, {
+    required String section,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    return Row(
+      key: ValueKey('home-$section-header'),
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: titleColor,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ),
+        TextButton(
+          key: ValueKey('home-$section-view-all'),
+          onPressed: widget.onViewAll,
+          style: TextButton.styleFrom(
+            foregroundColor: bodyTextColor,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.viewAll,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right_rounded, size: 22),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -1521,10 +1503,17 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
 
     if (_isLoading && _entries.isEmpty) {
       return Column(
-        children: const [
-          _CategoryStripSkeleton(),
-          SizedBox(height: 24),
-          _PopularProductsSkeleton(),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(context, l10n.homeMenuPreviewTitle,
+              section: 'dishes'),
+          const SizedBox(height: AppSpacing.related),
+          const _PopularProductsSkeleton(),
+          const SizedBox(height: AppSpacing.section),
+          _buildSectionHeader(context, l10n.categoriesTitle,
+              section: 'categories'),
+          const SizedBox(height: AppSpacing.related),
+          const _CategoryStripSkeleton(),
         ],
       );
     }
@@ -1543,7 +1532,7 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppRadius.card),
         ),
         child: Text(
           l10n.catalogEmpty,
@@ -1555,65 +1544,63 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
       );
     }
 
-    final products = _visibleEntries.take(6).toList(growable: false);
+    final products = _entries.take(6).toList(growable: false);
     return LayoutBuilder(
       builder: (context, constraints) {
-        final screenWidth = MediaQuery.sizeOf(context).width;
-        final cardWidth = _HomeBreakpoints.productCardWidth(screenWidth);
-        final productListHeight =
-            screenWidth < _HomeBreakpoints.compact ? 205.0 : 212.0;
-        final imageHeight = screenWidth < _HomeBreakpoints.normal ? 92.0 : 96.0;
+        final textScaler = MediaQuery.textScalerOf(context);
+        final cardWidth = (ProductDetailTokens.cardWidth *
+                textScaler.scale(ProductDetailTokens.cardTitleSize) /
+                ProductDetailTokens.cardTitleSize)
+            .clamp(ProductDetailTokens.cardWidth, constraints.maxWidth);
+        final imageHeight = cardWidth / ProductDetailTokens.cardAspectRatio;
+        var priceHeight = 0.0;
+        for (final entry in products) {
+          final label = _formatPrice(entry.price.price, isRu);
+          final separator = label.lastIndexOf(' ');
+          final painter = TextPainter(
+            text: TextSpan(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: ProductDetailTokens.cardPriceSize,
+                    fontWeight: FontWeight.w700,
+                    height: 1.3,
+                  ),
+              children: [
+                TextSpan(text: label.substring(0, separator)),
+                TextSpan(
+                    text: label.substring(separator),
+                    style: const TextStyle(
+                      fontSize: ProductDetailTokens.cardPriceSize * 0.8,
+                      fontWeight: FontWeight.w500,
+                    )),
+              ],
+            ),
+            textDirection: Directionality.of(context),
+            textScaler: textScaler,
+            maxLines: 2,
+          )..layout(maxWidth: cardWidth - AppSpacing.section * 2);
+          if (painter.height > priceHeight) priceHeight = painter.height;
+          painter.dispose();
+        }
+        final productListHeight = imageHeight +
+            AppSpacing.section * 2 +
+            textScaler.scale(ProductDetailTokens.cardTitleSize) * 1.3 * 2 +
+            AppSpacing.related +
+            priceHeight;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _CategoryStrip(
-              allLabel: l10n.categoryAll,
-              categories: _categories,
-              entries: _entries,
-              activeIndex: _activeCategoryIndex,
-              onChanged: (index) {
-                if (index == _activeCategoryIndex) return;
-                setState(() => _activeCategoryIndex = index);
-              },
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  l10n.popularFoodsTitle,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: titleColor,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                TextButton(
-                  onPressed: widget.onViewAll,
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF566173),
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        l10n.viewAll,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(Icons.chevron_right_rounded, size: 22),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
+            _buildSectionHeader(context, l10n.homeMenuPreviewTitle,
+                section: 'dishes'),
+            const SizedBox(height: AppSpacing.related),
             SizedBox(
               height: productListHeight,
               child: ListView.separated(
+                key: ValueKey('home-products-${_activeBranch.id}'),
+                controller: _productsController,
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.zero,
                 itemCount: products.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
@@ -1628,153 +1615,19 @@ class _HomeMenuPreviewState extends State<_HomeMenuPreview> {
                 },
               ),
             ),
+            const SizedBox(height: AppSpacing.section),
+            _buildSectionHeader(context, l10n.categoriesTitle,
+                section: 'categories'),
+            const SizedBox(height: AppSpacing.related),
+            HomeCategoryStrip(
+              categories: _categories,
+              activeIndex: -1,
+              onChanged: (index) =>
+                  widget.onCategorySelected(_categories[index].id),
+            ),
           ],
         );
       },
-    );
-  }
-}
-
-class _CategoryStrip extends StatelessWidget {
-  const _CategoryStrip({
-    required this.allLabel,
-    required this.categories,
-    required this.entries,
-    required this.activeIndex,
-    required this.onChanged,
-  });
-
-  final String allLabel;
-  final List<CatalogCategory> categories;
-  final List<_OfferEntry> entries;
-  final int activeIndex;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isCompact = constraints.maxWidth < _HomeBreakpoints.compact;
-        final itemWidth = isCompact ? 76.0 : 84.0;
-        final imageSize = isCompact ? 46.0 : 52.0;
-
-        return Container(
-          height: isCompact ? 112 : 116,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: categories.length + 1,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final isAll = index == 0;
-              final label = isAll ? allLabel : categories[index - 1].name;
-              final imageUrl = isAll
-                  ? _firstImageFromEntries(entries)
-                  : _categoryImage(categories[index - 1]);
-              return _CategoryPreviewItem(
-                label: label,
-                imageUrl: imageUrl,
-                width: itemWidth,
-                imageSize: imageSize,
-                isActive: index == activeIndex,
-                onTap: () => onChanged(index),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  static String? _categoryImage(CatalogCategory category) {
-    final thumbnail = category.thumbnail;
-    if (thumbnail != null && thumbnail.isNotEmpty) return thumbnail;
-    for (final item in category.items) {
-      if (item.images.isNotEmpty) return item.images.first;
-    }
-    return null;
-  }
-
-  static String? _firstImageFromEntries(List<_OfferEntry> entries) {
-    for (final entry in entries) {
-      if (entry.item.images.isNotEmpty) return entry.item.images.first;
-    }
-    return null;
-  }
-}
-
-class _CategoryPreviewItem extends StatelessWidget {
-  const _CategoryPreviewItem({
-    required this.label,
-    required this.imageUrl,
-    required this.width,
-    required this.imageSize,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final String label;
-  final String? imageUrl;
-  final double width;
-  final double imageSize;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: AnimatedContainer(
-          duration: kDefaultDuration,
-          width: width,
-          padding: const EdgeInsets.fromLTRB(8, 8, 8, 6),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: isActive ? primaryColor : Colors.transparent,
-              width: 1.2,
-            ),
-          ),
-          child: Column(
-            children: [
-              _RoundNetworkImage(
-                imageUrl: imageUrl,
-                size: imageSize,
-                fallbackIcon: Icons.restaurant_rounded,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: titleColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1797,47 +1650,44 @@ class _PopularProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final imageUrl =
-        entry.item.images.isNotEmpty ? entry.item.images.first : null;
+    final imageUrl = ProductDetailImages.recommendation(entry.item.images);
     return SizedBox(
+      key: ValueKey('home-product-${entry.item.id}'),
       width: width,
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: Ink(
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.06),
-                  blurRadius: 18,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              color: ProductDetailTokens.surface,
+              borderRadius: BorderRadius.circular(AppRadius.card),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(18),
+                    top: Radius.circular(AppRadius.card),
                   ),
                   child: SizedBox(
+                    key: ValueKey('home-product-image-${entry.item.id}'),
                     height: imageHeight,
                     width: double.infinity,
                     child: _NetworkFoodImage(
                       imageUrl: imageUrl,
+                      fallbackUrl:
+                          ProductDetailImages.original(entry.item.images),
+                      targetWidth: width,
                       fallbackIcon: Icons.restaurant_menu_rounded,
                     ),
                   ),
                 ),
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+                    padding: const EdgeInsets.all(AppSpacing.section),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1847,43 +1697,23 @@ class _PopularProductCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: titleColor,
-                            fontWeight: FontWeight.w800,
-                            height: 1.15,
+                            fontWeight: FontWeight.w600,
+                            fontSize: ProductDetailTokens.cardTitleSize,
+                            height: 1.3,
                           ),
                         ),
                         const Spacer(),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                price,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: titleColor,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                            InkResponse(
-                              onTap: onTap,
-                              radius: 22,
-                              child: Container(
-                                width: 34,
-                                height: 34,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: primaryColor),
-                                ),
-                                child: const Icon(
-                                  Icons.add_rounded,
-                                  color: primaryColor,
-                                  size: 24,
-                                ),
-                              ),
-                            ),
-                          ],
+                        InlinePriceText(
+                          label: price,
+                          hasPrice: true,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: titleColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: ProductDetailTokens.cardPriceSize,
+                            height: 1.3,
+                          ),
                         ),
                       ],
                     ),
@@ -1898,40 +1728,17 @@ class _PopularProductCard extends StatelessWidget {
   }
 }
 
-class _RoundNetworkImage extends StatelessWidget {
-  const _RoundNetworkImage({
-    required this.imageUrl,
-    required this.size,
-    required this.fallbackIcon,
-  });
-
-  final String? imageUrl;
-  final double size;
-  final IconData fallbackIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        width: size,
-        height: size,
-        child: _NetworkFoodImage(
-          imageUrl: imageUrl,
-          fallbackIcon: fallbackIcon,
-        ),
-      ),
-    );
-  }
-}
-
 class _NetworkFoodImage extends StatelessWidget {
   const _NetworkFoodImage({
     required this.imageUrl,
+    required this.targetWidth,
+    this.fallbackUrl,
     required this.fallbackIcon,
   });
 
   final String? imageUrl;
+  final String? fallbackUrl;
+  final double targetWidth;
   final IconData fallbackIcon;
 
   @override
@@ -1941,9 +1748,18 @@ class _NetworkFoodImage extends StatelessWidget {
     }
     return Image.network(
       imageUrl!,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       alignment: Alignment.center,
-      errorBuilder: (_, __, ___) => _FoodImageFallback(icon: fallbackIcon),
+      cacheWidth: (targetWidth * MediaQuery.devicePixelRatioOf(context))
+          .ceil()
+          .clamp(1, ProductDetailTokens.cardDecodeWidth),
+      errorBuilder: (_, __, ___) =>
+          fallbackUrl != null && fallbackUrl != imageUrl
+              ? _NetworkFoodImage(
+                  imageUrl: fallbackUrl,
+                  targetWidth: targetWidth,
+                  fallbackIcon: fallbackIcon)
+              : _FoodImageFallback(icon: fallbackIcon),
       loadingBuilder: (context, child, progress) {
         if (progress == null) return child;
         return const _ShimmerSkeleton(borderRadius: 0);
@@ -1975,7 +1791,10 @@ class _CategoryStripSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _ShimmerSkeleton(height: 116, borderRadius: 24);
+    return _ShimmerSkeleton(
+      height: HomeCategoryStrip.heightFor(context),
+      borderRadius: AppRadius.card,
+    );
   }
 }
 
@@ -1988,9 +1807,9 @@ class _PopularProductsSkeleton extends StatelessWidget {
       height: 212,
       child: Row(
         children: const [
-          Expanded(child: _ShimmerSkeleton(borderRadius: 18)),
+          Expanded(child: _ShimmerSkeleton(borderRadius: AppRadius.card)),
           SizedBox(width: 14),
-          Expanded(child: _ShimmerSkeleton(borderRadius: 18)),
+          Expanded(child: _ShimmerSkeleton(borderRadius: AppRadius.card)),
         ],
       ),
     );
@@ -2147,7 +1966,7 @@ class _OffersCarouselState extends State<_OffersCarousel> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),
@@ -2176,7 +1995,7 @@ class _OffersCarouselState extends State<_OffersCarousel> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(AppRadius.card),
           ),
           child: Text(
             l10n.catalogEmpty,
@@ -2308,15 +2127,15 @@ class _OfferCard extends StatelessWidget {
         entry.item.images.isNotEmpty ? entry.item.images.first : null;
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         child: RepaintBoundary(
           child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.card),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.06),
@@ -2389,7 +2208,7 @@ class _OfferError extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.05),
@@ -2445,7 +2264,7 @@ class _OfferImage extends StatelessWidget {
         width: 100,
         height: 100,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           gradient: const LinearGradient(
             colors: [Color(0xFFFFFFFF), Color(0xFFF7F3FF)],
             begin: Alignment.topLeft,
@@ -2460,7 +2279,7 @@ class _OfferImage extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppRadius.card),
           child: imageUrl != null
               ? Image.network(
                   imageUrl!,
@@ -2566,10 +2385,16 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
     _loadAccount();
   }
 
-  String _formatCurrency(double value, bool isRu) {
-    final formatted = _formatAmount(value, isRu: isRu);
-    final suffix = isRu ? 'сум' : "so'm";
-    return '$formatted $suffix';
+  Future<void> _openLogin() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SignInScreen(
+          destinationAfterLogin: EntryPoint(),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    _loadAccount();
   }
 
   String _formatAmount(double value, {required bool isRu}) {
@@ -2612,176 +2437,20 @@ class _LoyaltyStatsState extends State<_LoyaltyStats> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final isRu = l10n.locale == AppLocale.ru;
-    final title = isRu ? 'Бонусный баланс' : 'Bonus balans';
-    final subtitle = isRu ? 'Получайте 2.5% бонуса' : '2.5% bonus oling';
-    final historyLabel = isRu ? 'История' : 'Tarix';
     final balanceValue = _account?.pointsBalance;
     final balanceLabel = _isLoading
         ? '-'
         : balanceValue != null
-            ? _formatCurrency(balanceValue, isRu)
-            : "125 000 so'm";
-    return _BonusBalanceCard(
-      label: title,
-      value: balanceLabel,
-      subtitle: subtitle,
-      actionLabel: historyLabel,
-      onTap: _account == null ? null : () => _openPoints(_account!),
-    );
-  }
-}
-
-class _BonusBalanceCard extends StatelessWidget {
-  const _BonusBalanceCard({
-    required this.label,
-    required this.value,
-    required this.subtitle,
-    required this.actionLabel,
-    this.onTap,
-  });
-
-  final String label;
-  final String value;
-  final String subtitle;
-  final String actionLabel;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.sizeOf(context);
-    final isSmallPhone = size.width <= 375 || size.height <= 700;
-    final isTinyPhone = size.width <= 340;
-    final minHeight = isSmallPhone ? (isTinyPhone ? 72.0 : 78.0) : 104.0;
-    final iconSize = isSmallPhone ? 46.0 : 56.0;
-    final content = Container(
-      constraints: BoxConstraints(minHeight: minHeight),
-      padding: EdgeInsets.fromLTRB(
-        isSmallPhone ? 14 : 18,
-        isSmallPhone ? 12 : 16,
-        isSmallPhone ? 12 : 16,
-        isSmallPhone ? 12 : 16,
-      ),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_kHomePrimaryGreen, _kHomeDarkGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: _kHomeDarkGreen.withValues(alpha: 0.18),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: iconSize,
-            height: iconSize,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _kHomeAccentGreen.withValues(alpha: 0.95),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(
-              Icons.account_balance_wallet_rounded,
-              color: Colors.white,
-              size: 27,
-            ),
-          ),
-          SizedBox(width: isSmallPhone ? 12 : 17),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    fontSize: isSmallPhone ? 11.5 : 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.1,
-                  ),
-                ),
-                SizedBox(height: isSmallPhone ? 3 : 5),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    value,
-                    maxLines: 1,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: Colors.white,
-                      fontSize: isSmallPhone ? 20 : 26,
-                      fontWeight: FontWeight.w900,
-                      height: 1.05,
-                    ),
-                  ),
-                ),
-                if (!isTinyPhone) ...[
-                  SizedBox(height: isSmallPhone ? 4 : 7),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: isSmallPhone ? 11.5 : 12.5,
-                      fontWeight: FontWeight.w500,
-                      height: 1.1,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          SizedBox(width: isSmallPhone ? 8 : 12),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: isSmallPhone ? 54 : 64),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(
-                    actionLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: Colors.white,
-                      fontSize: isSmallPhone ? 12 : 13,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-                SizedBox(width: isSmallPhone ? 1 : 3),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: Colors.white,
-                  size: isSmallPhone ? 22 : 25,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (onTap == null) return content;
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(24),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
-        child: content,
-      ),
+            ? _formatAmount(balanceValue, isRu: isRu)
+            : '—';
+    return PointsBalanceCard(
+      cardKey: const ValueKey('home-bonus-card'),
+      title: l10n.pointsTitle,
+      balanceLabel: balanceLabel,
+      balanceUnit:
+          !_isLoading && balanceValue != null ? (isRu ? 'балл' : 'ball') : null,
+      helper: _account == null ? l10n.pointsLoginRequired : l10n.pointsHelper,
+      onTap: _account == null ? _openLogin : () => _openPoints(_account!),
     );
   }
 }

@@ -29,7 +29,7 @@ class ItemCard extends StatelessWidget {
           fontWeight: FontWeight.normal,
         );
     return InkWell(
-      borderRadius: const BorderRadius.all(Radius.circular(8)),
+      borderRadius: const BorderRadius.all(Radius.circular(AppRadius.card)),
       onTap: press,
       child: Padding(
         padding: const EdgeInsets.all(5.0),
@@ -40,7 +40,7 @@ class ItemCard extends StatelessWidget {
               AspectRatio(
                 aspectRatio: 1,
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(8)),
+                  borderRadius: const BorderRadius.all(Radius.circular(AppRadius.card)),
                   child: Image.asset(
                     image!,
                     fit: BoxFit.cover,

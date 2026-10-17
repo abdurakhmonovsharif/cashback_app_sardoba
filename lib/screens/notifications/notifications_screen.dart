@@ -31,7 +31,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   void initState() {
     super.initState();
     _loadNotifications();
-    _subscription = NotificationSocketManager.instance.notificationStream.listen(
+    _subscription =
+        NotificationSocketManager.instance.notificationStream.listen(
       (notification) {
         if (!mounted) return;
         setState(() {
@@ -250,28 +251,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (_items.isEmpty) {
       return Center(
         child: Padding(
-        padding: const EdgeInsets.all(defaultPadding * 2),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.notifications_none_rounded,
-              size: 64,
-              color: bodyTextColor,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.notificationsScreenEmpty,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
+          padding: const EdgeInsets.all(defaultPadding * 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.notifications_none_rounded,
+                size: 64,
                 color: bodyTextColor,
-                fontWeight: FontWeight.w600,
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              Text(
+                l10n.notificationsScreenEmpty,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: bodyTextColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
       );
     }
     return RefreshIndicator(
@@ -322,12 +323,12 @@ class _NotificationTile extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),

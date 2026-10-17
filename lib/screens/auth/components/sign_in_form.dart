@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app_localizations.dart';
 import '../../../components/buttons/primary_button.dart';
+import '../../../components/uzbek_phone_input.dart';
 import '../../../constants.dart';
 import '../../../entry_point.dart';
 import '../../../navigation/app_navigator.dart';
@@ -13,7 +14,9 @@ import '../../phoneLogin/number_verify_screen.dart';
 import '../../pin/pin_setup_screen.dart';
 
 class SignInForm extends StatefulWidget {
-  const SignInForm({super.key});
+  const SignInForm({super.key, this.destinationAfterLogin});
+
+  final Widget? destinationAfterLogin;
 
   @override
   State<SignInForm> createState() => _SignInFormState();
@@ -25,7 +28,6 @@ class _SignInFormState extends State<SignInForm> {
   bool _isPhoneValid = false;
   bool _isSubmitting = false;
   final TextEditingController _phoneController = TextEditingController();
-  bool _isAdjustingPhone = false;
 
   @override
   void initState() {
@@ -41,10 +43,7 @@ class _SignInFormState extends State<SignInForm> {
   }
 
   void _handlePhoneChanged() {
-    _enforceLeadingPlus();
-    final digitsOnly =
-        _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '').trim();
-    final nextIsValid = digitsOnly.length >= 10;
+    final nextIsValid = uzbekPhoneDigits(_phoneController.text).length == 9;
 
     if (nextIsValid != _isPhoneValid) {
       setState(() {
@@ -53,33 +52,17 @@ class _SignInFormState extends State<SignInForm> {
     }
   }
 
-  void _enforceLeadingPlus() {
-    if (_isAdjustingPhone) return;
-    final text = _phoneController.text;
-    if (text.isEmpty) return;
-    // Ensure exactly one leading "+" and keep the rest of the input as-is.
-    final normalized = text.startsWith('+')
-        ? text.replaceFirst(RegExp(r'^\++'), '+')
-        : '+$text';
-    if (normalized == text) return;
-    _isAdjustingPhone = true;
-    _phoneController.value = TextEditingValue(
-      text: normalized,
-      selection: TextSelection.collapsed(offset: normalized.length),
-    );
-    _isAdjustingPhone = false;
-  }
-
   InputDecoration _buildInputDecoration(
     String hint, {
     Widget? suffix,
+    Widget? prefix,
   }) {
-    const borderRadius = BorderRadius.all(Radius.circular(14));
+    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFB0B6C3), fontSize: 15),
+      hintStyle: const TextStyle(color: bodyTextColor, fontSize: 15),
       filled: true,
-      fillColor: const Color(0xFFF6F8FC),
+      fillColor: screenBackgroundColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       border: const OutlineInputBorder(
         borderRadius: borderRadius,
@@ -100,6 +83,8 @@ class _SignInFormState extends State<SignInForm> {
             )
           : null,
       suffixIconConstraints: const BoxConstraints(minHeight: 24, minWidth: 24),
+      prefixIcon: prefix,
+      prefixIconConstraints: const BoxConstraints(minHeight: 48, minWidth: 88),
     );
   }
 
@@ -139,7 +124,7 @@ class _SignInFormState extends State<SignInForm> {
     final navigator = Navigator.of(context);
     final strings = AppLocalizations.of(context);
     final storage = AuthStorage.instance;
-    final phoneRaw = _phoneController.text;
+    final phoneRaw = '$defaultPhoneInputPrefix${_phoneController.text}';
     final phone = storage.normalizePhone(phoneRaw);
     final authService = AuthService();
     try {
@@ -208,7 +193,11 @@ class _SignInFormState extends State<SignInForm> {
                     builder: (_) => PinSetupScreen(
                       onCompleted: (innerCtx) {
                         Navigator.of(innerCtx).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => const EntryPoint()),
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                widget.destinationAfterLogin ??
+                                const EntryPoint(),
+                          ),
                           (_) => false,
                         );
                       },
@@ -217,7 +206,10 @@ class _SignInFormState extends State<SignInForm> {
                 );
               } else {
                 rootNavigator.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const EntryPoint()),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        widget.destinationAfterLogin ?? const EntryPoint(),
+                  ),
                   (_) => false,
                 );
               }
@@ -258,50 +250,61 @@ class _SignInFormState extends State<SignInForm> {
     final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLabel(context, l10n.authEnterPhone),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _phoneController,
-            validator: phoneNumberValidator.call,
-            onSaved: (value) {},
-            textInputAction: TextInputAction.next,
-            keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
-            ],
-            decoration: _buildInputDecoration(
-              l10n.authPhoneHint,
-              suffix: AnimatedSwitcher(
-                duration: kDefaultDuration,
-                transitionBuilder: (child, animation) =>
-                    ScaleTransition(scale: animation, child: child),
-                child: _isPhoneValid
-                    ? _buildVerifiedIcon(key: const ValueKey("valid"))
-                    : const SizedBox(
-                        key: ValueKey("invalid"),
-                        height: 24,
-                        width: 24,
-                      ),
+      child: AutofillGroup(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildLabel(context, l10n.authEnterPhone),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _phoneController,
+              validator: (value) => uzbekPhoneDigits(value ?? '').length == 9
+                  ? null
+                  : l10n.authPhoneInvalid,
+              onSaved: (value) {},
+              autofillHints: const [AutofillHints.telephoneNumber],
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) {
+                if (_isPhoneValid) _handleSubmit();
+              },
+              keyboardType: TextInputType.phone,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                const UzbekPhoneFormatter(),
+              ],
+              decoration: _buildInputDecoration(
+                l10n.authPhoneLocalHint,
+                prefix: const UzbekPhonePrefix(),
+                suffix: AnimatedSwitcher(
+                  duration: kDefaultDuration,
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
+                  child: _isPhoneValid
+                      ? _buildVerifiedIcon(key: const ValueKey("valid"))
+                      : const SizedBox(
+                          key: ValueKey("invalid"),
+                          height: 24,
+                          width: 24,
+                        ),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.authOtpInfoLogin,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: bodyTextColor.withValues(alpha: 0.7),
-                ),
-          ),
-          const SizedBox(height: 24),
-          PrimaryButton(
-            text: l10n.authSendCode,
-            isLoading: _isSubmitting,
-            press: _handleSubmit,
-          ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              l10n.authOtpInfoLogin,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: bodyTextColor.withValues(alpha: 0.7),
+                  ),
+            ),
+            const SizedBox(height: 24),
+            PrimaryButton(
+              text: l10n.authSendCode,
+              isLoading: _isSubmitting,
+              press: _isPhoneValid ? _handleSubmit : null,
+              uppercase: false,
+            ),
+          ],
+        ),
       ),
     );
   }

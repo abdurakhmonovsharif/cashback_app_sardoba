@@ -50,7 +50,7 @@ class HelpCenterScreen extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 480),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(AppRadius.panel),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.05),

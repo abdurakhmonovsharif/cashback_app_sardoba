@@ -53,5 +53,12 @@ post_install do |installer|
       config.build_settings['OTHER_CFLAGS'] = other_cflags
     end
     flutter_additional_ios_build_settings(target)
+
+    # Xcode 27 no longer supports simulator deployment targets below iOS 15.
+    # Some transitive pods still declare older versions, so normalize every
+    # generated Pods target during each `pod install`.
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+    end
   end
 end

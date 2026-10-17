@@ -20,6 +20,11 @@ class ProfileInformationScreen extends StatefulWidget {
 
 class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _surnameFocus = FocusNode();
+  final _firstNameFocus = FocusNode();
+  final _middleNameFocus = FocusNode();
+  final _dobFocus = FocusNode();
+  final _dobFieldKey = GlobalKey();
   late final TextEditingController _firstNameController;
   late final TextEditingController _surnameController;
   late final TextEditingController _middleNameController;
@@ -162,6 +167,10 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     _middleNameController.dispose();
     _phoneController.dispose();
     _referralController.dispose();
+    _surnameFocus.dispose();
+    _firstNameFocus.dispose();
+    _middleNameFocus.dispose();
+    _dobFocus.dispose();
     super.dispose();
   }
 
@@ -172,13 +181,32 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
       Navigator.of(context).maybePop(false);
       return;
     }
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedDob == null) {
-      setState(() => _dobError = l10n.profileDobValidation);
-      return;
-    }
-    if (_isUnderMinimumAge(_selectedDob!)) {
-      setState(() => _dobError = l10n.dobTooYoung);
+    final isFormValid = _formKey.currentState!.validate();
+    final dobError = _selectedDob == null
+        ? l10n.profileDobValidation
+        : _isUnderMinimumAge(_selectedDob!)
+            ? l10n.dobTooYoung
+            : null;
+    setState(() => _dobError = dobError);
+    if (!isFormValid || dobError != null) {
+      if (_surnameController.text.trim().length < 2) {
+        _surnameFocus.requestFocus();
+      } else if (_firstNameController.text.trim().length < 2) {
+        _firstNameFocus.requestFocus();
+      } else if (_middleNameController.text.trim().isNotEmpty &&
+          _middleNameController.text.trim().length < 2) {
+        _middleNameFocus.requestFocus();
+      } else {
+        final dateContext = _dobFieldKey.currentContext;
+        if (dateContext != null) {
+          await Scrollable.ensureVisible(
+            dateContext,
+            duration: const Duration(milliseconds: 180),
+            alignment: 0.7,
+          );
+        }
+        _dobFocus.requestFocus();
+      }
       return;
     }
     final firstName = _firstNameController.text.trim();
@@ -299,9 +327,9 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
+          padding: EdgeInsets.fromLTRB(
             defaultPadding,
-            24,
+            hasAccount ? 16 : 24,
             defaultPadding,
             32,
           ),
@@ -312,7 +340,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppRadius.card),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.05),
@@ -340,21 +368,17 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                     ],
                   ),
                 ),
-              const SizedBox(height: 24),
+              if (!hasAccount) const SizedBox(height: 24),
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 20,
-                      offset: const Offset(0, 14),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  boxShadow: const [appCardShadow],
                 ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: defaultPadding,
+                  vertical: 20,
+                ),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -367,14 +391,19 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                           fontWeight: FontWeight.w700,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.section),
                       _LabeledField(
                         label: l10n.formSurnameLabel,
                         helper: '',
+                        showLabel: false,
                         child: TextFormField(
                           controller: _surnameController,
+                          focusNode: _surnameFocus,
                           enabled: hasAccount,
-                          decoration: _fieldDecoration(l10n.formSurnameHint),
+                          decoration: _fieldDecoration(
+                            l10n.formSurnameLabel,
+                            l10n.formSurnameHint,
+                          ),
                           textInputAction: TextInputAction.next,
                           validator: (value) {
                             final trimmed = (value ?? '').trim();
@@ -388,14 +417,19 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.section),
                       _LabeledField(
                         label: l10n.formFirstNameLabel,
                         helper: '',
+                        showLabel: false,
                         child: TextFormField(
                           controller: _firstNameController,
+                          focusNode: _firstNameFocus,
                           enabled: hasAccount,
-                          decoration: _fieldDecoration(l10n.formFirstNameHint),
+                          decoration: _fieldDecoration(
+                            l10n.formFirstNameLabel,
+                            l10n.formFirstNameHint,
+                          ),
                           textInputAction: TextInputAction.next,
                           validator: (value) {
                             final trimmed = (value ?? '').trim();
@@ -409,14 +443,19 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.section),
                       _LabeledField(
                         label: l10n.formMiddleNameLabel,
                         helper: l10n.commonOptional,
+                        showLabel: false,
                         child: TextFormField(
                           controller: _middleNameController,
+                          focusNode: _middleNameFocus,
                           enabled: hasAccount,
-                          decoration: _fieldDecoration(l10n.formMiddleNameHint),
+                          decoration: _fieldDecoration(
+                            l10n.formMiddleNameLabel,
+                            l10n.formMiddleNameHint,
+                          ),
                           textInputAction: TextInputAction.next,
                           validator: (value) {
                             final trimmed = (value ?? '').trim();
@@ -427,24 +466,34 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.section),
                       _LabeledField(
                         label: l10n.formPhoneLabel,
-                        helper: '',
+                        helper: l10n.profilePhoneReadonlyHint,
+                        showLabel: false,
                         child: TextFormField(
                           controller: _phoneController,
                           readOnly: true,
                           enabled: hasAccount,
-                          decoration: _fieldDecoration('—'),
+                          decoration: _fieldDecoration(
+                            l10n.formPhoneLabel,
+                            '—',
+                            suffixIcon: const Icon(Icons.lock_outline_rounded),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.section),
                       _LabeledField(
                         label: l10n.profileDobLabel,
                         helper: '',
                         error: _dobError,
                         child: _DobPicker(
+                          key: _dobFieldKey,
+                          focusNode: _dobFocus,
                           enabled: hasAccount,
+                          label: l10n.profileDobLabel,
+                          hint: l10n.profileDobPickerHint,
+                          error: _dobError,
                           hasValue: _selectedDob != null,
                           displayText: _selectedDob != null
                               ? l10n.formatDateDdMMyyyy(_selectedDob!)
@@ -453,7 +502,7 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                           onTap: hasAccount ? _pickBirthDate : null,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.section),
                     ],
                   ),
                 ),
@@ -465,10 +514,11 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(AppRadius.card),
                   ),
+                  minimumSize: const Size.fromHeight(48),
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
@@ -482,8 +532,9 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
                       )
                     : Text(l10n.formSaveChanges),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               _ProfileInfoActionButtons(
+                l10n: l10n,
                 onLogout: _confirmLogout,
                 onDelete: hasAccount ? _confirmDeleteAccount : null,
                 isDeleting: _isDeletingAccount,
@@ -495,17 +546,24 @@ class _ProfileInformationScreenState extends State<ProfileInformationScreen> {
     );
   }
 
-  InputDecoration _fieldDecoration(String hint) {
+  InputDecoration _fieldDecoration(
+    String label,
+    String hint, {
+    Widget? suffixIcon,
+  }) {
     return InputDecoration(
+      labelText: label,
+      floatingLabelBehavior: FloatingLabelBehavior.always,
       hintText: hint,
+      suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFF7F8FA),
+      fillColor: screenBackgroundColor,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: 16,
-        vertical: 18, // field height ni balandlashtiradi
+        vertical: 16,
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         borderSide: BorderSide.none,
       ),
     );
@@ -523,12 +581,14 @@ class _LabeledField extends StatelessWidget {
   final String helper;
   final Widget child;
   final String? error;
+  final bool showLabel;
 
   const _LabeledField({
     required this.label,
     required this.helper,
     required this.child,
     this.error,
+    this.showLabel = true,
   });
 
   @override
@@ -538,24 +598,25 @@ class _LabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        if (helper.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: Text(
-              helper,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-              ),
+        if (showLabel)
+          Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
             ),
           ),
         const SizedBox(height: 6),
         child,
+        if (helper.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              helper,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: bodyTextColor,
+              ),
+            ),
+          ),
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: 6),
@@ -571,7 +632,12 @@ class _LabeledField extends StatelessWidget {
 
 class _DobPicker extends StatelessWidget {
   const _DobPicker({
+    super.key,
     required this.enabled,
+    required this.focusNode,
+    required this.label,
+    required this.hint,
+    required this.error,
     required this.displayText,
     required this.hasValue,
     this.showError = false,
@@ -579,6 +645,10 @@ class _DobPicker extends StatelessWidget {
   });
 
   final bool enabled;
+  final FocusNode focusNode;
+  final String label;
+  final String hint;
+  final String? error;
   final String displayText;
   final bool hasValue;
   final bool showError;
@@ -587,36 +657,53 @@ class _DobPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseColor = hasValue ? titleColor : bodyTextColor;
-    final textColor =
-        enabled ? baseColor : bodyTextColor.withValues(alpha: 0.5);
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: Container(
-        decoration: BoxDecoration(
-          color: const Color(0xFFF6F8FC),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: showError ? Colors.redAccent : Colors.transparent,
-            width: 1,
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                displayText,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: textColor,
+    final textColor = enabled ? baseColor : bodyTextColor;
+    return Focus(
+      focusNode: focusNode,
+      child: Semantics(
+        button: true,
+        enabled: enabled,
+        label: label,
+        value: displayText,
+        hint: showError ? error : hint,
+        onTap: enabled ? onTap : null,
+        child: ExcludeSemantics(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: enabled ? onTap : null,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 48),
+                decoration: BoxDecoration(
+                  color: screenBackgroundColor,
+                  borderRadius: BorderRadius.circular(AppRadius.card),
+                  border: Border.all(
+                    color: showError ? Colors.redAccent : Colors.transparent,
+                    width: 1,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: defaultPadding,
+                  vertical: 12,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        displayText,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: textColor,
+                            ),
+                      ),
                     ),
+                    Icon(Icons.calendar_today_rounded,
+                        size: 18, color: textColor),
+                  ],
+                ),
               ),
             ),
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 18,
-              color: textColor.withValues(alpha: 0.8),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -625,11 +712,13 @@ class _DobPicker extends StatelessWidget {
 
 class _ProfileInfoActionButtons extends StatelessWidget {
   const _ProfileInfoActionButtons({
+    required this.l10n,
     required this.onLogout,
     this.onDelete,
     required this.isDeleting,
   });
 
+  final AppStrings l10n;
   final Future<void> Function() onLogout;
   final Future<void> Function()? onDelete;
   final bool isDeleting;
@@ -641,7 +730,7 @@ class _ProfileInfoActionButtons extends StatelessWidget {
       children: [
         _ProfileInfoActionButton(
           icon: Icons.logout_rounded,
-          title: "Chiqish",
+          title: l10n.profileLogout,
           accentColor: const Color(0xFFED5A5A),
           onTap: onLogout,
         ),
@@ -649,7 +738,7 @@ class _ProfileInfoActionButtons extends StatelessWidget {
           const SizedBox(height: 12),
           _ProfileInfoActionButton(
             icon: Icons.delete_forever_rounded,
-            title: "Akkauntni o‘chirish",
+            title: l10n.profileDeleteAccount,
             accentColor: const Color(0xFFB3261E),
             onTap: onDelete!,
             isLoading: isDeleting,
@@ -682,13 +771,13 @@ class _ProfileInfoActionButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: isLoading ? null : () async => await onTap(),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.04),

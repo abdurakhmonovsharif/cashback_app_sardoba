@@ -104,7 +104,7 @@ class _ReferFriendsScreenState extends State<ReferFriendsScreen> {
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(AppRadius.panel),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -220,7 +220,7 @@ class _ReferralCodeBlock extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
         gradient: const LinearGradient(
           colors: [Color(0xFF0DD277), Color(0xFF0AA35D)],
           begin: Alignment.topLeft,
@@ -242,7 +242,7 @@ class _ReferralCodeBlock extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.control),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
@@ -283,7 +283,7 @@ class _BenefitsCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),

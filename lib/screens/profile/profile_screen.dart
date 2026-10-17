@@ -7,14 +7,16 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../app_language.dart';
 import '../../app_localizations.dart';
-import '../../components/combined_card_widget.dart';
+import '../../components/points_balance_card.dart';
 import '../../constants.dart';
+import '../../entry_point.dart';
 import '../../models/account.dart';
 import '../../navigation/app_navigator.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_storage.dart';
 import '../../services/session_sync_service.dart';
 import '../../utils/snackbar_utils.dart';
+import '../auth/sign_in_screen.dart';
 import '../points/points_screen.dart';
 import '../notifications/notifications_screen.dart';
 import 'change_pin_screen.dart';
@@ -28,17 +30,20 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
+        centerTitle: false,
+        titleSpacing: defaultPadding,
         title: Text(
           l10n.profileTitle,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: titleColor,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                color: colors.onSurface,
+                fontSize: 24,
                 fontWeight: FontWeight.w700,
               ),
         ),
@@ -139,12 +144,47 @@ class _ProfileBodyState extends State<_ProfileBody> {
     unawaited(_refreshAccount());
   }
 
+  Future<void> _openLogin() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const SignInScreen(
+          destinationAfterLogin: EntryPoint(initialIndex: 3),
+        ),
+      ),
+    );
+    if (!mounted) return;
+    unawaited(_refreshAccount());
+  }
+
+  Future<void> _confirmLogout() async {
+    final l10n = AppLocalizations.of(context);
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.profileLogoutConfirmTitle),
+        content: Text(l10n.profileLogoutConfirmBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.profileLogoutConfirmSecondary),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.profileLogoutConfirmPrimary),
+          ),
+        ],
+      ),
+    );
+    if (shouldLogout == true) await AppNavigator.forceLogout();
+  }
+
   Future<ImageSource?> _selectImageSource() async {
     final l10n = AppLocalizations.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
       ),
       builder: (sheetContext) => SafeArea(
         child: Column(
@@ -301,7 +341,7 @@ class _ProfileBodyState extends State<_ProfileBody> {
           top: true,
           bottom: false,
           child: RefreshIndicator(
-            color: primaryColor,
+            color: Theme.of(context).colorScheme.primary,
             onRefresh: _refreshAccount,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(
@@ -316,25 +356,37 @@ class _ProfileBodyState extends State<_ProfileBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _ProfileHeader(
-                    account: account,
-                    onEdit: () => _openProfileInfo(account),
-                    onAvatarTap: account == null ? null : () => _changeAvatar(),
-                    isAvatarUploading: _isUploadingAvatar,
-                  ),
-                  const SizedBox(height: 20),
+                  if (account == null)
+                    _ProfileHeader(
+                      account: null,
+                      onEdit: _openLogin,
+                      onCardTap: _openLogin,
+                      onAvatarTap: _openLogin,
+                      isAvatarUploading: false,
+                    )
+                  else
+                    _ProfileHeader(
+                      account: account,
+                      onEdit: () => _openProfileInfo(account),
+                      onAvatarTap: _changeAvatar,
+                      isAvatarUploading: _isUploadingAvatar,
+                    ),
+                  const SizedBox(height: 24),
                   _LoyaltyHighlight(
                     account: account,
-                    onPointsTap:
-                        account == null ? null : () => _openPoints(account),
+                    onPointsTap: account == null
+                        ? _openLogin
+                        : () => _openPoints(account),
                   ),
                   const SizedBox(height: 24),
-                  _SettingsSection(
-                    onProfileInfoTap: () => _openProfileInfo(account),
-                    onChangePinTap: _openChangePin,
-                    onNotificationsTap: _openNotifications,
-                  ),
-                  const SizedBox(height: 24),
+                  if (account != null) ...[
+                    _SettingsSection(
+                      onProfileInfoTap: () => _openProfileInfo(account),
+                      onChangePinTap: _openChangePin,
+                      onNotificationsTap: _openNotifications,
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                   _SupportSection(
                     onHelpCenterTap: _openHelpCenter,
                     onReferFriendsTap: () => _openReferFriends(account),
@@ -342,6 +394,10 @@ class _ProfileBodyState extends State<_ProfileBody> {
                   ),
                   const SizedBox(height: 24),
                   const _LanguageSwitcher(),
+                  if (account != null) ...[
+                    const SizedBox(height: 24),
+                    _LogoutAction(onTap: _confirmLogout),
+                  ],
                 ],
               ),
             ),
@@ -352,16 +408,105 @@ class _ProfileBodyState extends State<_ProfileBody> {
   }
 }
 
+class _GuestProfileContent extends StatelessWidget {
+  const _GuestProfileContent({
+    required this.onLoginTap,
+    required this.description,
+    required this.loginLabel,
+    required this.guestName,
+    required this.initials,
+  });
+
+  final VoidCallback onLoginTap;
+  final String description;
+  final String loginLabel;
+  final String guestName;
+  final String initials;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: colors.primaryContainer,
+              child: Text(
+                initials,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: colors.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    guestName,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colors.onSurface,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colors.onSurfaceVariant,
+                      fontSize: 14,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 48,
+          child: FilledButton.icon(
+            onPressed: onLoginTap,
+            icon: const Icon(Icons.login_rounded, size: 18),
+            label: Text(loginLabel),
+            style: FilledButton.styleFrom(
+              backgroundColor: colors.primary,
+              foregroundColor: colors.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.control),
+              ),
+              textStyle: theme.textTheme.labelLarge?.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     this.account,
     required this.onEdit,
+    this.onCardTap,
     this.onAvatarTap,
     required this.isAvatarUploading,
   });
 
   final Account? account;
   final VoidCallback onEdit;
+  final VoidCallback? onCardTap;
   final VoidCallback? onAvatarTap;
   final bool isAvatarUploading;
 
@@ -369,165 +514,192 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final displayName = (account?.name.trim().isEmpty ?? true)
-        ? l10n.profileGuestName
-        : account!.name.trim();
-    final displayPhone = account == null ? '—' : _formatPhone(account?.phone);
+    final displayName = (account?.name.trim().isNotEmpty ?? false)
+        ? account!.name.trim()
+        : l10n.profileGuestName;
+    final displayPhone = _formatPhone(account?.phone);
     final initials = _initials(displayName);
     final hasPhoto = (account?.profilePhotoUrl ?? '').isNotEmpty;
     final dob = account?.dateOfBirth;
+    final colors = theme.colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 14),
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: InkWell(
+        onTap: onCardTap,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        child: Container(
+          key: ValueKey(
+            account == null ? 'profile-guest-card' : 'profile-account-card',
           ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: onAvatarTap,
-            borderRadius: BorderRadius.circular(40),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  height: 72,
-                  width: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF0DD277), Color(0xFF0AA35D)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.28),
-                        blurRadius: 24,
-                        offset: const Offset(0, 12),
-                      ),
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.white,
-                    child: hasPhoto
-                        ? ClipOval(
-                            child: Image.network(
-                              account!.profilePhotoUrl!,
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Text(
-                                initials,
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  color: primaryColor,
+          decoration: BoxDecoration(
+            color: colors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: appBorderColor),
+            boxShadow: [
+              BoxShadow(
+                color: colors.shadow.withValues(alpha: 0.035),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: account == null
+              ? _GuestProfileContent(
+                  onLoginTap: onEdit,
+                  description: l10n.profileGuestDescription,
+                  loginLabel: l10n.profileGuestLoginCta,
+                  guestName: l10n.profileGuestName,
+                  initials: _initials(l10n.profileGuestName),
+                )
+              : Row(
+                  children: [
+                    InkWell(
+                      onTap: onAvatarTap,
+                      borderRadius: BorderRadius.circular(40),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            height: 56,
+                            width: 56,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [
+                                  AppBrandColors.deepGreen,
+                                  AppBrandColors.deepGreenShade,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: colors.primary.withValues(alpha: 0.14),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: CircleAvatar(
+                              radius: 25,
+                              backgroundColor: colors.surface,
+                              child: hasPhoto
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        account!.profilePhotoUrl!,
+                                        width: 50,
+                                        height: 50,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => Text(
+                                          initials,
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w700,
+                                            color: colors.primary,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : Text(
+                                      initials,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w700,
+                                        color: colors.primary,
+                                      ),
+                                    ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 2,
+                            right: 2,
+                            child: Container(
+                              height: 24,
+                              width: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              alignment: Alignment.center,
+                              child: isAvatarUploading
+                                  ? const SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    )
+                                  : Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 14,
+                                      color: colors.primary,
+                                    ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            maxLines: 2,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: colors.onSurface,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            displayPhone,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colors.onSurfaceVariant,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (dob != null) ...[
+                            const SizedBox(height: 6),
+                            Text(
+                              '${l10n.profileDobLabel}: ${l10n.formatDateDdMMyyyy(dob)}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colors.onSurfaceVariant,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          )
-                        : Text(
-                            initials,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: primaryColor,
-                            ),
-                          ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 2,
-                  right: 2,
-                  child: Container(
-                    height: 28,
-                    width: 28,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          ],
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onEdit,
+                      tooltip: l10n.profileInfoMenuTitle,
+                      icon: Icon(Icons.edit_outlined, color: colors.primary),
+                      style: IconButton.styleFrom(
+                        backgroundColor: colors.primaryContainer,
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.control),
                         ),
-                      ],
+                        minimumSize: const Size(48, 48),
+                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: isAvatarUploading
-                        ? const SizedBox(
-                            height: 16,
-                            width: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(
-                            Icons.camera_alt_rounded,
-                            size: 15,
-                            color: primaryColor,
-                          ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  displayName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: titleColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  displayPhone,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: bodyTextColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                if (dob != null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    '${l10n.profileDobLabel}: ${l10n.formatDateDdMMyyyy(dob)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: bodyTextColor,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-                if (account == null) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    l10n.profileLoginRequired,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: bodyTextColor,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onEdit,
-            icon: const Icon(Icons.edit_outlined, color: primaryColor),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -564,27 +736,18 @@ class _LoyaltyHighlight extends StatelessWidget {
     final isRu = l10n.locale == AppLocale.ru;
     final balanceValue = account?.pointsBalance;
     final balanceLabel =
-        balanceValue != null ? _formatCurrency(balanceValue, isRu) : '—';
-    final helper = account == null
-        ? l10n.pointsLoginRequired
-        : l10n.pointsHelper;
+        balanceValue != null ? _formatAmount(balanceValue, isRu: isRu) : '—';
+    final helper =
+        account == null ? l10n.pointsLoginRequired : l10n.pointsHelper;
 
-    return CombinedCardWidget(
-      balanceLabel: l10n.pointsTitle,
-      balanceValue: balanceLabel,
-      balanceNote: helper,
-      tierTitle: '',
-      tierNote: '',
-      showTier: false,
-      currentPointsText: null,
+    return PointsBalanceCard(
+      cardKey: const ValueKey('profile-bonus-card'),
+      title: l10n.pointsTitle,
+      balanceLabel: balanceLabel,
+      balanceUnit: balanceValue != null ? (isRu ? 'балл' : 'ball') : null,
+      helper: helper,
       onTap: onPointsTap,
     );
-  }
-
-  String _formatCurrency(double value, bool isRu) {
-    final formatted = _formatAmount(value, isRu: isRu);
-    final suffix = isRu ? 'балл' : 'ball';
-    return '$formatted $suffix';
   }
 
   String _formatAmount(double value, {required bool isRu}) {
@@ -687,6 +850,7 @@ class _SupportSection extends StatelessWidget {
         _SectionTitle(title: l10n.profileSupportSection),
         const SizedBox(height: 12),
         _ProfileMenuCard(
+          surfaceKey: const ValueKey('profile-support-card'),
           icon: Icons.headset_mic_outlined,
           title: l10n.profileHelpMenuTitle,
           subtitle: l10n.profileHelpMenuSubtitle,
@@ -711,12 +875,42 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: titleColor,
+            color: colors.onSurface,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
           ),
+    );
+  }
+}
+
+class _LogoutAction extends StatelessWidget {
+  const _LogoutAction({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.logout_rounded),
+      label: Text(l10n.profileLogout),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: colors.error,
+        side: BorderSide(color: colors.errorContainer),
+        minimumSize: const Size.fromHeight(48),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.card),
+        ),
+        textStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+      ),
     );
   }
 }
@@ -726,8 +920,10 @@ class _ProfileMenuCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Key? surfaceKey;
 
   const _ProfileMenuCard({
+    this.surfaceKey,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -736,65 +932,88 @@ class _ProfileMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 10),
+    final colors = Theme.of(context).colorScheme;
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle',
+      onTap: onTap,
+      child: ExcludeSemantics(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            onTap: onTap,
+            child: Container(
+              key: surfaceKey,
+              constraints: const BoxConstraints(minHeight: 68),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                border: Border.all(color: appBorderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.shadow.withValues(alpha: 0.025),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                height: 44,
-                width: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: primaryColor.withValues(alpha: 0.12),
-                ),
-                alignment: Alignment.center,
-                child: Icon(icon, color: primaryColor),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: titleColor,
-                            fontWeight: FontWeight.w600,
-                          ),
+              child: Row(
+                children: [
+                  Container(
+                    height: 44,
+                    width: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.control),
+                      color: colors.primaryContainer,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: bodyTextColor,
-                          ),
+                    alignment: Alignment.center,
+                    child:
+                        Icon(icon, color: colors.onPrimaryContainer, size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: colors.onSurface,
+                                    fontSize: 16,
+                                    height: 1.2,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colors.onSurfaceVariant,
+                                    fontSize: 13,
+                                    height: 1.25,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 10),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 22,
+                    color: colors.onSurfaceVariant,
+                  ),
+                ],
               ),
-              const SizedBox(width: 10),
-              const Icon(
-                Icons.arrow_forward_ios_rounded,
-                size: 18,
-                color: bodyTextColor,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -808,6 +1027,7 @@ class _LanguageSwitcher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -816,7 +1036,8 @@ class _LanguageSwitcher extends StatelessWidget {
         Text(
           l10n.profileLanguageSectionSubtitle,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: bodyTextColor,
+                color: colors.onSurfaceVariant,
+                fontSize: 13,
               ),
         ),
         const SizedBox(height: 12),
@@ -830,6 +1051,7 @@ class _LanguageSwitcher extends StatelessWidget {
                   child: _LanguageButton(
                     label: "O'zbekcha",
                     isActive: current == AppLocale.uz,
+                    buttonKey: const ValueKey('profile-language-uz'),
                     onTap: () => AppLanguage.instance.setLocale(AppLocale.uz),
                   ),
                 ),
@@ -838,6 +1060,7 @@ class _LanguageSwitcher extends StatelessWidget {
                   child: _LanguageButton(
                     label: 'Русский',
                     isActive: current == AppLocale.ru,
+                    buttonKey: const ValueKey('profile-language-ru'),
                     onTap: () => AppLanguage.instance.setLocale(AppLocale.ru),
                   ),
                 ),
@@ -855,32 +1078,47 @@ class _LanguageButton extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.buttonKey,
   });
 
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final Key? buttonKey;
 
   @override
   Widget build(BuildContext context) {
-    final background = isActive ? primaryColor : Colors.white;
-    final foreground = isActive ? Colors.white : titleColor;
-    final borderColor = isActive ? primaryColor : const Color(0xFFCBD4E1);
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        backgroundColor: background,
-        foregroundColor: foreground,
-        side: BorderSide(color: borderColor, width: 1.5),
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
+    final colors = Theme.of(context).colorScheme;
+    final background =
+        isActive ? colors.primary : colors.surfaceContainerLowest;
+    final foreground = isActive ? colors.onPrimary : colors.onSurface;
+    final borderColor = isActive ? colors.primary : appBorderColor;
+    return Semantics(
+      button: true,
+      selected: isActive,
+      inMutuallyExclusiveGroup: true,
+      label: label,
+      onTap: onTap,
+      excludeSemantics: true,
+      child: OutlinedButton(
+        key: buttonKey,
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: background,
+          foregroundColor: foreground,
+          side: BorderSide(color: borderColor, width: 1.5),
+          minimumSize: const Size.fromHeight(48),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.control),
+          ),
+          textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
         ),
-        textStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+        child: ExcludeSemantics(child: Text(label)),
       ),
-      child: Text(label),
     );
   }
 }

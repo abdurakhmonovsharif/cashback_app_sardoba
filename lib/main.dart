@@ -82,8 +82,16 @@ class _MyAppState extends State<MyApp> {
             ],
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(seedColor: primaryColor),
+              fontFamily: 'SF Pro Text',
+              scaffoldBackgroundColor: screenBackgroundColor,
+              cardTheme: const CardThemeData(
+                shape: RoundedRectangleBorder(
+                  borderRadius:
+                      BorderRadius.all(Radius.circular(AppRadius.card)),
+                ),
+              ),
               appBarTheme: const AppBarTheme(
-                backgroundColor: Colors.white,
+                backgroundColor: screenBackgroundColor,
                 elevation: 0,
                 iconTheme: IconThemeData(color: Colors.black),
                 titleTextStyle: TextStyle(
@@ -97,9 +105,9 @@ class _MyAppState extends State<MyApp> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryColor,
                   foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 40),
+                  minimumSize: const Size(double.infinity, 48),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.card),
                   ),
                 ),
               ),

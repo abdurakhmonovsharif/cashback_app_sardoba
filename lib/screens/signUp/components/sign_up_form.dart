@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../../app_localizations.dart';
 import '../../../components/buttons/primary_button.dart';
+import '../../../components/uzbek_phone_input.dart';
 import '../../../constants.dart';
 import '../../../entry_point.dart';
 import '../../../services/auth_storage.dart';
@@ -17,18 +18,14 @@ class SignUpForm extends StatefulWidget {
   State<SignUpForm> createState() => _SignUpFormState();
 }
 
-class _SignUpFormState extends State<SignUpForm>
-    with SingleTickerProviderStateMixin {
+class _SignUpFormState extends State<SignUpForm> {
   final _formKey = GlobalKey<FormState>();
 
-  bool _showReferralField = false;
   bool _isPhoneValid = false;
   bool _isSubmitting = false;
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _referralController = TextEditingController();
-  bool _isAdjustingPhone = false;
   DateTime? _selectedDob;
   String? _dobError;
 
@@ -50,7 +47,6 @@ class _SignUpFormState extends State<SignUpForm>
     _phoneController.removeListener(_handlePhoneChanged);
     _nameController.dispose();
     _phoneController.dispose();
-    _referralController.dispose();
     super.dispose();
   }
 
@@ -85,10 +81,7 @@ class _SignUpFormState extends State<SignUpForm>
   }
 
   void _handlePhoneChanged() {
-    _enforceLeadingPlus();
-    final digitsOnly =
-        _phoneController.text.replaceAll(RegExp(r'[^0-9]'), '').trim();
-    final nextIsValid = digitsOnly.length >= 10;
+    final nextIsValid = uzbekPhoneDigits(_phoneController.text).length == 9;
 
     if (nextIsValid != _isPhoneValid) {
       setState(() {
@@ -97,29 +90,17 @@ class _SignUpFormState extends State<SignUpForm>
     }
   }
 
-  void _enforceLeadingPlus() {
-    if (_isAdjustingPhone) return;
-    final text = _phoneController.text;
-    if (text.isEmpty) return;
-    final normalized = text.startsWith('+')
-        ? text.replaceFirst(RegExp(r'^\++'), '+')
-        : '+$text';
-    if (normalized == text) return;
-    _isAdjustingPhone = true;
-    _phoneController.value = TextEditingValue(
-      text: normalized,
-      selection: TextSelection.collapsed(offset: normalized.length),
-    );
-    _isAdjustingPhone = false;
-  }
-
-  InputDecoration _buildInputDecoration(String hint, {Widget? suffix}) {
-    const borderRadius = BorderRadius.all(Radius.circular(14));
+  InputDecoration _buildInputDecoration(
+    String hint, {
+    Widget? suffix,
+    Widget? prefix,
+  }) {
+    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFB0B6C3), fontSize: 15),
+      hintStyle: const TextStyle(color: bodyTextColor, fontSize: 15),
       filled: true,
-      fillColor: const Color(0xFFF6F8FC),
+      fillColor: screenBackgroundColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       border: const OutlineInputBorder(
         borderRadius: borderRadius,
@@ -140,6 +121,8 @@ class _SignUpFormState extends State<SignUpForm>
             )
           : null,
       suffixIconConstraints: const BoxConstraints(minHeight: 24, minWidth: 24),
+      prefixIcon: prefix,
+      prefixIconConstraints: const BoxConstraints(minHeight: 48, minWidth: 88),
     );
   }
 
@@ -177,12 +160,8 @@ class _SignUpFormState extends State<SignUpForm>
     final navigator = Navigator.of(context);
     final storage = AuthStorage.instance;
     final name = _nameController.text.trim();
-    final phoneRaw = _phoneController.text;
+    final phoneRaw = '$defaultPhoneInputPrefix${_phoneController.text}';
     final normalizedPhone = storage.normalizePhone(phoneRaw);
-    final referral = _referralController.text.trim().isEmpty
-        ? null
-        : _referralController.text.trim();
-
     final authService = AuthService();
     try {
       await authService.requestOtp(
@@ -236,7 +215,6 @@ class _SignUpFormState extends State<SignUpForm>
                 code: code,
                 name: name,
                 purpose: 'register',
-                referralCode: referral,
                 dateOfBirth: _selectedDob,
               );
               await storage.upsertAccount(
@@ -308,25 +286,25 @@ class _SignUpFormState extends State<SignUpForm>
           _buildLabel(l10n.authEnterPhone, labelStyle),
           const SizedBox(height: 8),
           TextFormField(
-            validator: phoneNumberValidator.call,
+            validator: (value) => uzbekPhoneDigits(value ?? '').length == 9
+                ? null
+                : l10n.authPhoneInvalid,
             onSaved: (value) {},
+            autofillHints: const [AutofillHints.telephoneNumber],
             textInputAction: TextInputAction.next,
             keyboardType: TextInputType.phone,
             controller: _phoneController,
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9+ ]')),
+              FilteringTextInputFormatter.digitsOnly,
+              const UzbekPhoneFormatter(),
             ],
             decoration: _buildInputDecoration(
-              l10n.authPhoneHint,
+              l10n.authPhoneLocalHint,
+              prefix: const UzbekPhonePrefix(),
               suffix: AnimatedSwitcher(
                 duration: kDefaultDuration,
-                transitionBuilder: (child, animation) => ScaleTransition(
-                  scale: CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutBack,
-                  ),
-                  child: child,
-                ),
+                transitionBuilder: (child, animation) =>
+                    ScaleTransition(scale: animation, child: child),
                 child: _isPhoneValid
                     ? _buildVerifiedIcon(key: const ValueKey("valid"))
                     : const SizedBox(
@@ -357,82 +335,12 @@ class _SignUpFormState extends State<SignUpForm>
                   color: bodyTextColor.withValues(alpha: 0.7),
                 ),
           ),
-          const SizedBox(height: 16),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _showReferralField = !_showReferralField;
-              });
-            },
-            child: AnimatedContainer(
-              duration: kDefaultDuration,
-              curve: Curves.easeInOut,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF6F8FC),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: _showReferralField
-                      ? primaryColor.withValues(alpha: 0.45)
-                      : Colors.transparent,
-                ),
-                boxShadow: _showReferralField
-                    ? [
-                        BoxShadow(
-                          color: primaryColor.withValues(alpha: 0.15),
-                          offset: const Offset(0, 12),
-                          blurRadius: 20,
-                        ),
-                      ]
-                    : null,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.authReferralToggle,
-                    style: const TextStyle(
-                      color: titleColor,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  AnimatedRotation(
-                    turns: _showReferralField ? 0.5 : 0,
-                    duration: kDefaultDuration,
-                    curve: Curves.easeInOut,
-                    child: const Icon(
-                      Icons.keyboard_arrow_down,
-                      color: Color(0xFF8D97A8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          AnimatedSize(
-            duration: kDefaultDuration,
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _showReferralField
-                ? Column(
-                    children: [
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: _referralController,
-                        decoration:
-                            _buildInputDecoration(l10n.authReferralHint),
-                      ),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-          ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
           PrimaryButton(
             text: l10n.authContinue,
             isLoading: _isSubmitting,
             press: _handleSubmit,
+            uppercase: false,
           ),
         ],
       ),
@@ -450,8 +358,8 @@ class _SignUpFormState extends State<SignUpForm>
       onTap: _pickDob,
       child: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFFF6F8FC),
-          borderRadius: BorderRadius.circular(14),
+          color: screenBackgroundColor,
+          borderRadius: BorderRadius.circular(AppRadius.card),
           border: Border.all(color: borderColor),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),

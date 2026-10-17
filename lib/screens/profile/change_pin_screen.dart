@@ -152,9 +152,9 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding:
-              const EdgeInsets.fromLTRB(defaultPadding, 32, defaultPadding, 24),
+              const EdgeInsets.fromLTRB(defaultPadding, 24, defaultPadding, 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -196,12 +196,10 @@ class _ChangePinScreenState extends State<ChangePinScreen> {
                 ),
               ] else
                 const SizedBox(height: 32),
-              Expanded(
-                child: PinKeypad(
-                  onDigitPressed: _onDigitPressed,
-                  onBackspacePressed: _onBackspace,
-                  isBusy: _isBusy || !_initialized,
-                ),
+              PinKeypad(
+                onDigitPressed: _onDigitPressed,
+                onBackspacePressed: _onBackspace,
+                isBusy: _isBusy || !_initialized,
               ),
               TextButton(
                 onPressed: _isBusy ? null : _resetFlow,

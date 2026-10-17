@@ -27,6 +27,7 @@ class _OtpFormState extends State<OtpForm> {
   late final List<FocusNode> _nodes;
   late final List<TextEditingController> _controllers;
   bool _isSubmitting = false;
+  bool _isDistributingCode = false;
   String? _error;
 
   @override
@@ -101,43 +102,84 @@ class _OtpFormState extends State<OtpForm> {
     return false;
   }
 
+  void _handleDigitChanged(int index, String rawValue) {
+    if (_isDistributingCode) return;
+    final digits = rawValue.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digits.length > 1) {
+      _isDistributingCode = true;
+      for (var offset = 0;
+          offset < digits.length && index + offset < 4;
+          offset++) {
+        _controllers[index + offset].value = TextEditingValue(
+          text: digits[offset],
+          selection: const TextSelection.collapsed(offset: 1),
+        );
+      }
+      _isDistributingCode = false;
+      _nodes[(index + digits.length - 1).clamp(0, 3)].unfocus();
+    } else if (digits.isNotEmpty) {
+      final nextNode = index < _nodes.length - 1 ? _nodes[index + 1] : null;
+      nextNode?.requestFocus();
+    }
+
+    setState(() {});
+    _submitIfReady();
+  }
+
   Widget _buildDigitField(int index) {
     final node = _nodes[index];
-    final FocusNode? nextNode = index < _nodes.length - 1 ? _nodes[index + 1] : null;
     final controller = _controllers[index];
+    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
 
-    return SizedBox(
-      width: 48,
-      height: 48,
-      child: TextFormField(
-        onChanged: (rawValue) {
-          final value = rawValue.trim();
-          if (value.length > 1) {
-            controller.text = value[0];
-            controller.selection = const TextSelection.collapsed(offset: 1);
-          }
-          if (value.isNotEmpty) {
-            if (nextNode != null) {
-              nextNode.requestFocus();
-            } else {
-              node.unfocus();
-            }
-          }
-          _submitIfReady();
-        },
-        validator: RequiredValidator(errorText: '').call,
-        autofocus: index == 0,
-        maxLength: 1,
-        focusNode: node,
-        obscureText: false,
-        keyboardType: TextInputType.number,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(1),
-        ],
-        textAlign: TextAlign.center,
-        decoration: otpInputDecoration,
-        controller: controller,
+    return Semantics(
+      label:
+          '${AppLocalizations.of(context).authOtpScreenTitle} ${index + 1}/4',
+      textField: true,
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: TextFormField(
+          onChanged: (rawValue) => _handleDigitChanged(index, rawValue),
+          validator: RequiredValidator(errorText: '').call,
+          autofocus: index == 0,
+          focusNode: node,
+          obscureText: false,
+          autofillHints: index == 0 ? const [AutofillHints.oneTimeCode] : null,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: titleColor,
+                fontWeight: FontWeight.w700,
+              ),
+          decoration: const InputDecoration(
+            contentPadding: EdgeInsets.zero,
+            counterText: '',
+            errorStyle: TextStyle(height: 0),
+            filled: true,
+            fillColor: screenBackgroundColor,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide(color: appBorderColor),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide(color: primaryColor, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide(color: Colors.red),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: borderRadius,
+              borderSide: BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          controller: controller,
+        ),
       ),
     );
   }
@@ -147,34 +189,38 @@ class _OtpFormState extends State<OtpForm> {
     final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              for (int i = 0; i < 4; i++) _buildDigitField(i),
-            ],
-          ),
-          if (_error != null) ...[
-            const SizedBox(height: defaultPadding),
-            Text(
-              _error!,
-              style: const TextStyle(
-                color: Color(0xFFED5A5A),
-                fontWeight: FontWeight.w600,
-              ),
+      child: AutofillGroup(
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                for (int i = 0; i < 4; i++) _buildDigitField(i),
+              ],
             ),
-          ] else
-            const SizedBox(height: defaultPadding * 2),
-          // Continue Button
-          PrimaryButton(
-            text:l10n.authContinue ,
-            isLoading: _isSubmitting,
-            press: () async {
-              await _submitIfReady();
-            },
-          )
-        ],
+            if (_error != null) ...[
+              const SizedBox(height: defaultPadding),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  _error!,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ] else
+              const SizedBox(height: defaultPadding * 2),
+            // Continue Button
+            PrimaryButton(
+              text: l10n.authContinue,
+              isLoading: _isSubmitting,
+              press: _allFieldsFilled() ? _submitIfReady : null,
+              uppercase: false,
+            ),
+          ],
+        ),
       ),
     );
   }

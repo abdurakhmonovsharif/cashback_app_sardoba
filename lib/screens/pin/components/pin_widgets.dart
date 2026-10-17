@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../app_localizations.dart';
 import '../../../constants.dart';
 
 class PinDots extends StatelessWidget {
@@ -7,32 +8,38 @@ class PinDots extends StatelessWidget {
 
   final int count;
   final int filled;
-  
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(count, (index) {
-        final isFilled = index < filled;
-        return AnimatedContainer(
-          duration: kDefaultDuration,
-          curve: Curves.easeOut,
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          height: 16,
-          width: 16,
-          decoration: BoxDecoration(
-            color: isFilled ? primaryColor : Colors.transparent,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isFilled
-                  ? primaryColor
-                  : const Color(0xFFBBC3D0).withValues(alpha: 0.4),
-              width: 2,
-            ),
-          ),
-        );
-      }),
+    final l10n = AppLocalizations.of(context);
+    return Semantics(
+      label: l10n.pinDigitsProgress(filled, count),
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(count, (index) {
+            final isFilled = index < filled;
+            return AnimatedContainer(
+              duration: kDefaultDuration,
+              curve: Curves.easeOut,
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              height: 16,
+              width: 16,
+              decoration: BoxDecoration(
+                color: isFilled ? primaryColor : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isFilled
+                      ? primaryColor
+                      : const Color(0xFFBBC3D0).withValues(alpha: 0.4),
+                  width: 2,
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
     );
   }
 }
@@ -115,51 +122,68 @@ class PinKeypad extends StatelessWidget {
 
     final theme = Theme.of(context);
     final disabled = isBusy;
+    final l10n = AppLocalizations.of(context);
+    final label = key.type == _PinKeyType.backspace
+        ? l10n.pinKeypadBackspace
+        : key.label!;
 
     return SizedBox(
       width: size,
       height: size,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: disabled
-              ? null
-              : () {
-                  if (key.type == _PinKeyType.backspace) {
-                    onBackspacePressed();
-                  } else {
-                    onDigitPressed(key.label!);
-                  }
-                },
-          borderRadius: BorderRadius.circular(size / 2),
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-              border: Border.all(
-                color: const Color(0xFFD7DDE5),
-              ),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x11000000),
-                  blurRadius: 10,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: key.type == _PinKeyType.backspace
-                ? Icon(
-                    Icons.backspace_outlined,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  )
-                : Text(
-                    key.label!,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: titleColor,
-                    ),
+      child: Semantics(
+        button: true,
+        enabled: !disabled,
+        label: label,
+        onTap: disabled
+            ? null
+            : () => key.type == _PinKeyType.backspace
+                ? onBackspacePressed()
+                : onDigitPressed(key.label!),
+        child: ExcludeSemantics(
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: disabled
+                  ? null
+                  : () {
+                      if (key.type == _PinKeyType.backspace) {
+                        onBackspacePressed();
+                      } else {
+                        onDigitPressed(key.label!);
+                      }
+                    },
+              borderRadius: BorderRadius.circular(size / 2),
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  border: Border.all(
+                    color: const Color(0xFFD7DDE5),
                   ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x11000000),
+                      blurRadius: 10,
+                      offset: Offset(0, 6),
+                    ),
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: key.type == _PinKeyType.backspace
+                    ? Icon(
+                        Icons.backspace_outlined,
+                        color:
+                            theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      )
+                    : Text(
+                        key.label!,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: titleColor,
+                        ),
+                      ),
+              ),
+            ),
           ),
         ),
       ),

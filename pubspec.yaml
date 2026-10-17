@@ -71,8 +71,23 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/images/home_banners/
     - assets/icons/
     - assets/branding/
+    # Fulfillment is paused; restore together with _OrderMethodSection.
+    # - assets/disabled/fulfillment/
+
+  fonts:
+    - family: SF Pro Text
+      fonts:
+        - asset: assets/font/SF Pro Text/SFProText-Regular.ttf
+          weight: 400
+        - asset: assets/font/SF Pro Text/SFProText-Medium.ttf
+          weight: 500
+        - asset: assets/font/SF Pro Text/SFProText-Semibold.ttf
+          weight: 600
+        - asset: assets/font/SF Pro Text/SFProText-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: true

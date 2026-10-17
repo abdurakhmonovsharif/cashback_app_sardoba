@@ -15,7 +15,7 @@ class BigCardImageSlideScalton extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.08),
-            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            borderRadius: const BorderRadius.all(Radius.circular(AppRadius.card)),
           ),
         ),
         Positioned(

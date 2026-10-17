@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'points_entry.dart';
 import 'loyalty_summary.dart';
+import 'loyalty_qr.dart';
 
 class Account {
   const Account({
@@ -20,6 +21,7 @@ class Account {
     this.level,
     this.pointsHistory,
     this.cardTracks,
+    this.loyaltyQr,
     this.giftget = false,
   });
 
@@ -38,6 +40,7 @@ class Account {
   final String? level;
   final List<PointsEntry>? pointsHistory;
   final List<String>? cardTracks;
+  final LoyaltyQr? loyaltyQr;
   final bool giftget;
 
   Account copyWith({
@@ -56,6 +59,7 @@ class Account {
     String? level,
     List<PointsEntry>? pointsHistory,
     List<String>? cardTracks,
+    LoyaltyQr? loyaltyQr,
     bool? giftget,
   }) {
     return Account(
@@ -74,6 +78,7 @@ class Account {
       level: level ?? this.level,
       pointsHistory: pointsHistory ?? this.pointsHistory,
       cardTracks: cardTracks ?? this.cardTracks,
+      loyaltyQr: loyaltyQr ?? this.loyaltyQr,
       giftget: giftget ?? this.giftget,
     );
   }
@@ -92,9 +97,9 @@ class Account {
         'waiterId': waiterId,
         'loyalty': loyalty?.toJson(),
         'level': level,
-        'pointsHistory':
-            pointsHistory?.map((entry) => entry.toJson()).toList(),
+        'pointsHistory': pointsHistory?.map((entry) => entry.toJson()).toList(),
         'cardTracks': cardTracks,
+        'loyaltyQr': loyaltyQr?.toJson(),
         'giftget': giftget,
       };
 
@@ -124,8 +129,10 @@ class Account {
           ?.whereType<Map>()
           .map((e) => PointsEntry.fromJson(e.cast<String, dynamic>()))
           .toList(),
-      cardTracks:
-          (json['cardTracks'] as List?)?.whereType<String>().toList(),
+      cardTracks: (json['cardTracks'] as List?)?.whereType<String>().toList(),
+      loyaltyQr: LoyaltyQr.fromJson(
+        (json['loyaltyQr'] as Map?)?.cast<String, dynamic>(),
+      ),
       giftget: json['giftget'] as bool? ?? false,
     );
   }

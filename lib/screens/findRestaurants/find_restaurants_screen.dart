@@ -18,7 +18,7 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
   final TextEditingController _addressController = TextEditingController();
 
   InputDecoration _buildInputDecoration(String hint, {Widget? prefix}) {
-    const borderRadius = BorderRadius.all(Radius.circular(16));
+    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Color(0xFFB0B6C3), fontSize: 15),
@@ -106,7 +106,7 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(AppRadius.panel),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.04),

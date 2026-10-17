@@ -78,7 +78,7 @@ class PointsEntry {
       source: pointsSourceFrom(json['source']?.toString()),
       staffId: (json['staff_id'] as num?)?.toInt(),
       balanceAfter: parseDouble(json['balance_after']),
-      createdAt: parseDate(json['created_at']),
+      createdAt: parseDate(json['created_at']).toLocal(),
     );
   }
 

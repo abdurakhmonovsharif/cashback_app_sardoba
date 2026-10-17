@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../app_localizations.dart';
+import '../../components/sardoba_auth_logo.dart';
 import '../../constants.dart';
 import '../signUp/components/sign_up_form.dart';
 import 'sign_in_screen.dart';
@@ -14,16 +15,6 @@ class SignUpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
-    final subtleTextStyle = theme.textTheme.bodyMedium?.copyWith(
-          color: bodyTextColor,
-          height: 1.4,
-        ) ??
-        const TextStyle(
-          color: bodyTextColor,
-          fontSize: 14,
-          height: 1.4,
-        );
-
     return Scaffold(
       backgroundColor: screenBackgroundColor,
       extendBodyBehindAppBar: true,
@@ -43,60 +34,65 @@ class SignUpScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.fromLTRB(
+            defaultPadding,
+            12,
+            defaultPadding,
+            32,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: defaultPadding,
-                  vertical: 8,
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: defaultPadding + 6,
-                    vertical: 24,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 24,
-                        offset: const Offset(0, 16),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        l10n.authSignUpTitle,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                              color: titleColor,
-                              fontWeight: FontWeight.w700,
-                            ) ??
-                            const TextStyle(
-                              color: titleColor,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        l10n.authSignUpSubtitle,
-                        textAlign: TextAlign.center,
-                        style: subtleTextStyle,
-                      ),
-                      const SizedBox(height: 26),
-                      const SignUpForm(),
-                    ],
-                  ),
-                ),
+              const SizedBox(height: 8),
+              const Center(child: SardobaAuthLogo()),
+              const SizedBox(height: 24),
+              Text(
+                l10n.authSignUpTitle,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                      color: titleColor,
+                      fontWeight: FontWeight.w700,
+                    ) ??
+                    const TextStyle(
+                      color: titleColor,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
+              Text(
+                l10n.authSignUpSubtitle,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                      color: bodyTextColor,
+                      height: 1.45,
+                    ) ??
+                    const TextStyle(
+                      color: bodyTextColor,
+                      fontSize: 14,
+                      height: 1.45,
+                    ),
+              ),
+              const SizedBox(height: 28),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(AppRadius.panel),
+                  border: const Border.fromBorderSide(
+                    BorderSide(color: appBorderColor),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: const SignUpForm(),
+              ),
+              const SizedBox(height: 24),
               Center(
                 child: Text.rich(
                   TextSpan(

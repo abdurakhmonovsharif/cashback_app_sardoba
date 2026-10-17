@@ -7,27 +7,30 @@ import '../../constants.dart';
 
 class PrimaryButton extends StatelessWidget {
   final String text;
-  final GestureTapCallback press;
+  final GestureTapCallback? press;
   final bool isLoading;
+  final bool uppercase;
 
   const PrimaryButton({
     super.key,
     required this.text,
     required this.press,
     this.isLoading = false,
+    this.uppercase = true,
   });
-  
+
   @override
   Widget build(BuildContext context) {
-    EdgeInsets verticalPadding =
-        const EdgeInsets.symmetric(vertical: defaultPadding);
+    const verticalPadding = EdgeInsets.symmetric(vertical: defaultPadding);
+    final enabled = !isLoading && press != null;
     return SizedBox(
       width: double.infinity,
       child: Platform.isIOS
           ? CupertinoButton(
               padding: verticalPadding,
               color: primaryColor,
-              onPressed: isLoading ? null : press,
+              disabledColor: primaryColor.withValues(alpha: 0.35),
+              onPressed: enabled ? press : null,
               child: isLoading
                   ? const CupertinoActivityIndicator(color: Colors.white)
                   : buildText(context),
@@ -36,8 +39,10 @@ class PrimaryButton extends StatelessWidget {
               style: TextButton.styleFrom(
                 padding: verticalPadding,
                 backgroundColor: primaryColor,
+                disabledBackgroundColor: primaryColor.withValues(alpha: 0.35),
+                disabledForegroundColor: Colors.white.withValues(alpha: 0.82),
               ),
-              onPressed: isLoading ? null : press,
+              onPressed: enabled ? press : null,
               child: isLoading
                   ? const SizedBox(
                       height: 22,
@@ -54,7 +59,7 @@ class PrimaryButton extends StatelessWidget {
 
   Text buildText(BuildContext context) {
     return Text(
-      text.toUpperCase(),
+      uppercase ? text.toUpperCase() : text,
       style: kButtonTextStyle,
     );
   }

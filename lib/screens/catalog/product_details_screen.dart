@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 
 import '../../app_language.dart';
 import '../../app_localizations.dart';
+import '../../components/inline_price_text.dart';
 import '../../constants.dart';
 import '../../models/branch.dart';
 import '../../models/catalog.dart';
 import '../../services/branch_state.dart';
 import '../../services/favorite_products.dart';
+import 'product_detail_images.dart';
+import 'product_detail_pressable.dart';
 
 class CatalogProductDetailsScreen extends StatefulWidget {
   const CatalogProductDetailsScreen({
@@ -96,6 +99,7 @@ class _CatalogProductDetailsScreenState
         unavailableLabel,
         bodyTextColor,
         hasPrice: false,
+        compactLabel: l10n.catalogUnavailableInBranchCompact,
       );
     }
     if (price.disabled) {
@@ -104,6 +108,7 @@ class _CatalogProductDetailsScreenState
         label,
         accentColor,
         hasPrice: false,
+        compactLabel: l10n.catalogTemporarilyDisabledCompact,
       );
     }
 
@@ -135,130 +140,135 @@ class _CatalogProductDetailsScreenState
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final priceInfo = _resolvePriceInfo(_activeItem, l10n);
-    final images = _activeItem.images;
     final relatedItems = widget.category.items
         .where((item) => item.id != _activeItem.id)
         .where((item) => _priceForActiveBranch(item) != null)
         .toList();
+    final favorite = _favorites.isFavorite(_activeItem.id);
+    final titleStyle = theme.textTheme.titleLarge?.copyWith(
+      fontSize: ProductDetailTokens.titleSize,
+      height: 1.3,
+      color: titleColor,
+      fontWeight: FontWeight.w600,
+    );
 
     return Scaffold(
       backgroundColor: screenBackgroundColor,
       appBar: AppBar(
         backgroundColor: screenBackgroundColor,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: titleColor),
-        title: Text(
-          widget.category.name,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: titleColor,
-            fontWeight: FontWeight.w700,
-          ),
+        scrolledUnderElevation: 0,
+        leading: ProductDetailPressable(
+          key: const ValueKey('product-back'),
+          label: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: () => Navigator.of(context).maybePop(),
+          child: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: titleColor, size: 22),
         ),
+        title: Text(widget.category.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: titleColor,
+              fontWeight: FontWeight.w600,
+            )),
         centerTitle: true,
       ),
       body: SafeArea(
+        top: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(
-            defaultPadding,
-            12,
-            defaultPadding,
-            24,
-          ),
+          key: const ValueKey('product-detail-scroll'),
+          padding: const EdgeInsets.fromLTRB(defaultPadding, AppSpacing.related,
+              defaultPadding, defaultPadding + AppSpacing.related),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _ProductHeroImage(image: images.isNotEmpty ? images.first : null),
-              const SizedBox(height: 20),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 24,
-                      offset: const Offset(0, 16),
+              _ProductHeroImage(images: _activeItem.images),
+              const SizedBox(height: AppSpacing.section),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(_activeItem.name,
+                          key: const ValueKey('product-title'),
+                          style: titleStyle),
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _activeItem.name,
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              color: titleColor,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _favoritesInitialized
-                              ? () => _favorites.toggle(_activeItem.id)
-                              : null,
-                          icon: Icon(
-                            _favorites.isFavorite(_activeItem.id)
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                          ),
-                          color: _favorites.isFavorite(_activeItem.id)
-                              ? primaryColor
-                              : bodyTextColor,
-                          splashRadius: 22,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      priceInfo.label,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: priceInfo.color,
-                        fontWeight: priceInfo.hasPrice
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                      ),
-                    ),
-                    if (priceInfo.hasPrice) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        _activeBranch.name,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: bodyTextColor,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: AppSpacing.related),
+                  _FavoriteButton(
+                    key: const ValueKey('product-favorite'),
+                    isFavorite: favorite,
+                    label: favorite
+                        ? l10n.catalogFavoriteRemove(_activeItem.name)
+                        : l10n.catalogFavoriteAdd(_activeItem.name),
+                    onPressed: _favoritesInitialized
+                        ? () => _favorites.toggle(_activeItem.id)
+                        : null,
+                  ),
+                ],
               ),
-              if (relatedItems.isNotEmpty) ...[
-                const SizedBox(height: 28),
-                Text(
-                  l10n.catalogRelatedProducts(widget.category.name),
-                  style: theme.textTheme.titleMedium?.copyWith(
+              const SizedBox(height: AppSpacing.related),
+              if (priceInfo.hasPrice)
+                InlinePriceText(
+                  key: const ValueKey('product-price'),
+                  label: priceInfo.label,
+                  hasPrice: true,
+                  currencyFontSize: ProductDetailTokens.currencySize,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontSize: ProductDetailTokens.priceSize,
+                    height: 1.25,
                     color: titleColor,
                     fontWeight: FontWeight.w700,
                   ),
+                )
+              else
+                _UnavailableProductStatus(
+                  label: priceInfo.label,
+                  semanticLabel: priceInfo.label,
                 ),
-                const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.related),
+              Text(_activeBranch.name,
+                  key: const ValueKey('product-branch'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: bodyTextColor,
+                    height: 1.4,
+                  )),
+              if (relatedItems.isNotEmpty) ...[
+                const SizedBox(height: ProductDetailTokens.sectionGap),
+                const Divider(height: 1, color: appBorderColor),
+                const SizedBox(height: ProductDetailTokens.sectionGap),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    l10n.catalogRelatedProducts(widget.category.name),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: titleColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.section),
                 SizedBox(
-                  height: 220,
+                  height: _RelatedProductCard.heightFor(context),
                   child: ListView.separated(
+                    key: const ValueKey('product-recommendations'),
                     scrollDirection: Axis.horizontal,
                     itemCount: relatedItems.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.section),
                     itemBuilder: (context, index) {
                       final item = relatedItems[index];
-                      final info = _resolvePriceInfo(item, l10n);
+                      final isFavorite = _favorites.isFavorite(item.id);
                       return _RelatedProductCard(
                         item: item,
-                        priceInfo: info,
-                        isFavorite: _favorites.isFavorite(item.id),
+                        priceInfo: _resolvePriceInfo(item, l10n),
+                        isFavorite: isFavorite,
+                        favoriteTooltip: isFavorite
+                            ? l10n.catalogFavoriteRemove(item.name)
+                            : l10n.catalogFavoriteAdd(item.name),
                         onFavorite: () => _favorites.toggle(item.id),
                         onTap: () => _selectItem(item),
                       );
@@ -275,67 +285,61 @@ class _CatalogProductDetailsScreenState
 }
 
 class _ProductHeroImage extends StatelessWidget {
-  const _ProductHeroImage({this.image});
-
-  final String? image;
+  const _ProductHeroImage({required this.images});
+  final List<String> images;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 28,
-            offset: const Offset(0, 20),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: AspectRatio(
-          aspectRatio: 4 / 3,
-          child: image != null
-              ? Image.network(
-                  image!,
-                  fit: BoxFit.cover,
-                  filterQuality: FilterQuality.high,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return Container(
-                      color: const Color(0xFFF6F8FC),
-                      alignment: Alignment.center,
-                      child: const CircularProgressIndicator(
-                        color: primaryColor,
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) =>
-                      const _ImageFallback(),
-                )
-              : const _ImageFallback(),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: AspectRatio(
+        key: const ValueKey('product-hero'),
+        aspectRatio: 1,
+        child: _ProductImage(
+          image: ProductDetailImages.original(images),
+          hero: true,
         ),
       ),
     );
   }
 }
 
-class _ImageFallback extends StatelessWidget {
-  const _ImageFallback();
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.image, this.fallback, this.hero = false});
+  final String? image;
+  final String? fallback;
+  final bool hero;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: const Color(0xFFF6F8FC),
+    if (image == null) return const _ImageFallback();
+    return CachedNetworkImage(
+      imageUrl: image!,
+      fit: BoxFit.contain,
       alignment: Alignment.center,
-      child: const Icon(
-        Icons.fastfood_outlined,
-        size: 72,
-        color: bodyTextColor,
-      ),
+      width: double.infinity,
+      height: double.infinity,
+      // Preserve the original's detail in the hero; bound small-card decoding.
+      memCacheWidth: hero ? null : ProductDetailTokens.cardDecodeWidth,
+      placeholder: (context, url) => hero
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          : const _ImageFallback(),
+      errorWidget: (context, url, error) =>
+          fallback != null && fallback != image
+              ? _ProductImage(image: fallback)
+              : const _ImageFallback(),
     );
   }
+}
+
+class _ImageFallback extends StatelessWidget {
+  const _ImageFallback();
+  @override
+  Widget build(BuildContext context) => const ColoredBox(
+        color: screenBackgroundColor,
+        child:
+            Center(child: Icon(Icons.fastfood_outlined, color: bodyTextColor)),
+      );
 }
 
 class _RelatedProductCard extends StatelessWidget {
@@ -343,6 +347,7 @@ class _RelatedProductCard extends StatelessWidget {
     required this.item,
     required this.priceInfo,
     required this.isFavorite,
+    required this.favoriteTooltip,
     required this.onFavorite,
     required this.onTap,
   });
@@ -350,106 +355,128 @@ class _RelatedProductCard extends StatelessWidget {
   final CatalogItem item;
   final _PriceInfo priceInfo;
   final bool isFavorite;
+  final String favoriteTooltip;
   final VoidCallback onFavorite;
   final VoidCallback onTap;
+
+  static double widthFor(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final scaledWidth = ProductDetailTokens.cardWidth *
+        scaler.scale(ProductDetailTokens.cardTitleSize) /
+        ProductDetailTokens.cardTitleSize;
+    final available = MediaQuery.sizeOf(context).width - defaultPadding * 2;
+    if (available <= ProductDetailTokens.cardWidth) return available;
+    return scaledWidth.clamp(ProductDetailTokens.cardWidth, available);
+  }
+
+  static double heightFor(BuildContext context) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final titleHeight =
+        scaler.scale(ProductDetailTokens.cardTitleSize) * 1.3 * 2;
+    final priceHeight =
+        scaler.scale(ProductDetailTokens.cardPriceSize) * 1.3 * 2;
+    return widthFor(context) / ProductDetailTokens.cardAspectRatio +
+        AppSpacing.section * 2 +
+        titleHeight +
+        AppSpacing.related +
+        (priceHeight > ProductDetailTokens.touchTarget
+            ? priceHeight
+            : ProductDetailTokens.touchTarget);
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final image = item.images.isNotEmpty ? item.images.first : null;
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          width: 160,
+    final titleHeight = MediaQuery.textScalerOf(context)
+            .scale(ProductDetailTokens.cardTitleSize) *
+        1.3 *
+        2;
+    final original = ProductDetailImages.original(item.images);
+    return ProductDetailPressable(
+      key: ValueKey('related-open-${item.id}'),
+      label: '${item.name}, ${priceInfo.label}',
+      preserveChildSemantics: true,
+      onPressed: onTap,
+      child: SizedBox(
+        width: widthFor(context),
+        child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 10),
-              ),
-            ],
+            color: ProductDetailTokens.surface,
+            borderRadius: BorderRadius.circular(AppRadius.card),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  topRight: Radius.circular(18),
+              ExcludeSemantics(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(AppRadius.card)),
+                      child: AspectRatio(
+                        aspectRatio: ProductDetailTokens.cardAspectRatio,
+                        child: _ProductImage(
+                          image:
+                              ProductDetailImages.recommendation(item.images),
+                          fallback: original,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(AppSpacing.section,
+                          AppSpacing.section, AppSpacing.section, 0),
+                      child: SizedBox(
+                        height: titleHeight,
+                        child: Text(item.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontSize: ProductDetailTokens.cardTitleSize,
+                              height: 1.3,
+                              color: titleColor,
+                              fontWeight: FontWeight.w600,
+                            )),
+                      ),
+                    ),
+                  ],
                 ),
-                child: image != null
-                    ? CachedNetworkImage(
-                        imageUrl: image,
-                        height: 100,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            const _RelatedImagePlaceholder(),
-                        errorWidget: (context, url, error) =>
-                            const _RelatedImagePlaceholder(),
-
-                        // optional optimizations
-                        memCacheHeight: 300,
-                        memCacheWidth: 300,
-                      )
-                    : const _RelatedImagePlaceholder(),
               ),
+              const SizedBox(height: AppSpacing.related),
               Expanded(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.section, 0, 0, AppSpacing.section),
+                  child: Row(
                     children: [
-                      Text(
-                        item.name,
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: titleColor,
-                          fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: ExcludeSemantics(
+                          child: priceInfo.hasPrice
+                              ? InlinePriceText(
+                                  label: priceInfo.label,
+                                  hasPrice: true,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    fontSize: ProductDetailTokens.cardPriceSize,
+                                    height: 1.3,
+                                    color: titleColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                )
+                              : _UnavailableProductStatus(
+                                  label:
+                                      priceInfo.compactLabel ?? priceInfo.label,
+                                  semanticLabel: priceInfo.label,
+                                  compact: true,
+                                ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              priceInfo.label,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: priceInfo.color,
-                                fontWeight: priceInfo.hasPrice
-                                    ? FontWeight.w700
-                                    : FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: onFavorite,
-                            icon: Icon(
-                              isFavorite
-                                  ? Icons.favorite_rounded
-                                  : Icons.favorite_border_rounded,
-                            ),
-                            color: isFavorite ? primaryColor : bodyTextColor,
-                            iconSize: 22,
-                            padding: const EdgeInsets.all(4),
-                            constraints: const BoxConstraints(
-                              minWidth: 28,
-                              minHeight: 28,
-                            ),
-                            splashRadius: 18,
-                          ),
-                        ],
+                      _FavoriteButton(
+                        key: ValueKey('related-favorite-${item.id}'),
+                        isFavorite: isFavorite,
+                        label: favoriteTooltip,
+                        onPressed: onFavorite,
                       ),
                     ],
                   ),
@@ -463,32 +490,67 @@ class _RelatedProductCard extends StatelessWidget {
   }
 }
 
-class _RelatedImagePlaceholder extends StatelessWidget {
-  const _RelatedImagePlaceholder();
+class _FavoriteButton extends StatelessWidget {
+  const _FavoriteButton(
+      {super.key,
+      required this.isFavorite,
+      required this.label,
+      required this.onPressed});
+  final bool isFavorite;
+  final String label;
+  final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 100,
-      width: double.infinity,
-      color: screenBackgroundColor,
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.fastfood_outlined,
-        color: bodyTextColor,
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: ProductDetailPressable(
+          label: label,
+          selected: isFavorite,
+          onPressed: onPressed,
+          child: SizedBox.square(
+            dimension: ProductDetailTokens.touchTarget,
+            child: Icon(
+                isFavorite
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
+                color: isFavorite ? primaryColor : bodyTextColor),
+          ),
+        ),
+      );
+}
+
+class _UnavailableProductStatus extends StatelessWidget {
+  const _UnavailableProductStatus(
+      {required this.label, required this.semanticLabel, this.compact = false});
+  final String label;
+  final String semanticLabel;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        label: semanticLabel,
+        excludeSemantics: true,
+        child: Text(
+          label,
+          maxLines: compact ? 2 : null,
+          overflow: compact ? TextOverflow.ellipsis : null,
+          style: (compact
+                  ? Theme.of(context).textTheme.bodySmall
+                  : Theme.of(context).textTheme.bodyMedium)
+              ?.copyWith(
+                  color: bodyTextColor,
+                  fontWeight: FontWeight.w500,
+                  height: 1.3),
+        ),
+      );
 }
 
 class _PriceInfo {
-  const _PriceInfo(
-    this.label,
-    this.color, {
-    required this.hasPrice,
-  });
-
+  const _PriceInfo(this.label, this.color,
+      {required this.hasPrice, this.compactLabel});
   final String label;
   final Color color;
   final bool hasPrice;
+  final String? compactLabel;
 }

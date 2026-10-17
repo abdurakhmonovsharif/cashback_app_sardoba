@@ -5,15 +5,21 @@ import '../../app_localizations.dart';
 import '../../constants.dart';
 import '../../models/account.dart';
 import '../../models/points_entry.dart';
-import '../../models/points_history.dart';
+import '../../models/points_transaction_page.dart';
 import '../../models/loyalty_summary.dart';
 import '../../navigation/app_navigator.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_session_guard.dart';
 import '../../services/auth_storage.dart';
-import '../../services/branch_state.dart';
 import '../../services/points_service.dart';
 import '../../utils/snackbar_utils.dart';
+import '../catalog/product_detail_pressable.dart';
+import 'wallet_calendar.dart';
+import 'wallet_widgets.dart';
+
+enum _TransactionDirection { all, credit, debit }
+
+enum _TransactionPeriod { all, sevenDays, thirtyDays, custom }
 
 class PointsScreen extends StatefulWidget {
   const PointsScreen({
@@ -23,6 +29,7 @@ class PointsScreen extends StatefulWidget {
     this.initialBalance,
     this.initialEntries,
     this.initialLoyalty,
+    this.pointsService,
   });
 
   final Account? account;
@@ -30,37 +37,17 @@ class PointsScreen extends StatefulWidget {
   final double? initialBalance;
   final List<PointsEntry>? initialEntries;
   final LoyaltySummary? initialLoyalty;
-
-  static const List<_PointsHistoryEntry> _demoHistory = [
-    _PointsHistoryEntry(
-      title: 'Начисление баллов',
-      subtitle: 'QR скан',
-      date: '12.09.2024',
-      amount: 12000,
-    ),
-    _PointsHistoryEntry(
-      title: 'Баллы за визит',
-      subtitle: 'Филиал',
-      date: '09.09.2024',
-      amount: 8000,
-    ),
-    _PointsHistoryEntry(
-      title: 'Промо начисление',
-      subtitle: 'Акция',
-      date: '02.09.2024',
-      amount: 5500,
-      pending: true,
-    ),
-  ];
+  final PointsService? pointsService;
 
   @override
   State<PointsScreen> createState() => _PointsScreenState();
 }
 
 class _PointsScreenState extends State<PointsScreen> {
-  final PointsService _pointsService = PointsService();
+  late final PointsService _pointsService;
+  late final bool _ownsPointsService;
   final AuthStorage _storage = AuthStorage.instance;
-  final BranchState _branchState = BranchState.instance;
+  final ScrollController _scrollController = ScrollController();
 
   Account? _account;
   LoyaltySummary? _loyalty;
@@ -68,33 +55,48 @@ class _PointsScreenState extends State<PointsScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<PointsEntry> _entries = const [];
-  bool _usingDemo = false;
+  PointsTransactionSummary _summary = const PointsTransactionSummary();
+  _TransactionDirection _direction = _TransactionDirection.all;
+  _TransactionPeriod _period = _TransactionPeriod.all;
+  DateTimeRange? _customRange;
+  String? _nextCursor;
+  bool _hasMore = false;
+  bool _isLoadingMore = false;
+  bool _loadMoreFailed = false;
+  int _requestGeneration = 0;
+  (DateTime?, DateTime?) _activeDates = (null, null);
 
   @override
   void initState() {
     super.initState();
+    _ownsPointsService = widget.pointsService == null;
+    _pointsService = widget.pointsService ?? PointsService();
     _account = widget.account;
     _loyalty = widget.account?.loyalty ?? widget.initialLoyalty;
     _entries = widget.initialEntries ?? const [];
-    _balance = widget.initialBalance ??
-        widget.account?.pointsBalance ??
-        0.0;
+    _balance = widget.initialBalance ?? widget.account?.pointsBalance ?? 0.0;
     _isLoading = _entries.isEmpty;
-    _usingDemo = _entries.isEmpty && widget.account == null;
+    _scrollController.addListener(_onScroll);
     _loadData();
   }
 
   @override
   void dispose() {
-    _pointsService.dispose();
+    if (_ownsPointsService) _pointsService.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData({bool refresh = false}) async {
     if (!mounted) return;
+    final generation = ++_requestGeneration;
+    final dates = _selectedDates;
+    _activeDates = dates;
     if (!refresh) {
       setState(() {
         _isLoading = _entries.isEmpty;
+        _isLoadingMore = false;
+        _loadMoreFailed = false;
         _errorMessage = null;
       });
     } else {
@@ -105,7 +107,7 @@ class _PointsScreenState extends State<PointsScreen> {
     try {
       var account = _account ?? await _storage.getCurrentAccount();
       if (account == null) {
-        if (!mounted) return;
+        if (!mounted || generation != _requestGeneration) return;
         setState(() {
           _account = null;
           _entries = const [];
@@ -113,72 +115,74 @@ class _PointsScreenState extends State<PointsScreen> {
           _balance = widget.initialBalance ?? 0;
           _isLoading = false;
           _errorMessage = AppLocalizations.of(context).pointsLoginRequired;
-          _usingDemo = true;
         });
         return;
       }
       account = await _syncAccount(account);
       final resolvedAccount = account;
       if (resolvedAccount == null || resolvedAccount.id == null) {
-        if (!mounted) return;
+        if (!mounted || generation != _requestGeneration) return;
         setState(() {
           _account = null;
           _entries = const [];
           _isLoading = false;
           _errorMessage = AppLocalizations.of(context).pointsLoginRequired;
-          _usingDemo = true;
         });
         return;
       }
 
       if (!refresh &&
+          _direction == _TransactionDirection.all &&
+          _period == _TransactionPeriod.all &&
           (resolvedAccount.pointsHistory?.isNotEmpty ?? false) &&
           _entries.isEmpty) {
-        if (!mounted) return;
+        if (!mounted || generation != _requestGeneration) return;
         setState(() {
           _account = resolvedAccount;
           _entries = resolvedAccount.pointsHistory!;
           _loyalty = resolvedAccount.loyalty ?? _loyalty;
-          _balance = resolvedAccount.pointsBalance ??
-              _balance;
+          _balance = resolvedAccount.pointsBalance ?? _balance;
           _isLoading = false;
           _errorMessage = null;
-          _usingDemo = false;
         });
       }
 
-      final history = await _fetchHistoryWithRefresh(resolvedAccount.id!);
+      final history = await _fetchTransactionsWithRefresh(dates: dates);
 
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _account = resolvedAccount;
-        _entries = history.transactions;
+        _entries = history.items;
         _loyalty = history.loyalty;
-        _balance = resolvedAccount.pointsBalance ??
-            (history.transactions.isNotEmpty
-                ? history.transactions.first.balanceAfter
+        _summary = history.summary;
+        _nextCursor = history.nextCursor;
+        _hasMore = history.hasMore;
+        _loadMoreFailed = false;
+        _balance = history.loyalty.pointsBalance ??
+            resolvedAccount.pointsBalance ??
+            (history.items.isNotEmpty
+                ? history.items.first.balanceAfter
                 : _balance);
         _isLoading = false;
         _errorMessage = null;
-        _usingDemo = false;
       });
     } on PointsUnauthorizedException {
+      if (generation != _requestGeneration) return;
       await AppNavigator.forceLogout();
       if (!mounted) return;
       setState(() {
         _errorMessage = AppLocalizations.of(context).pointsLoginRequired;
         _isLoading = false;
-        _usingDemo = true;
       });
       return;
     } on PointsServiceException catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _errorMessage = error.message;
         _isLoading = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _requestGeneration) return;
       setState(() {
         _errorMessage = error.toString();
         _isLoading = false;
@@ -247,12 +251,16 @@ class _PointsScreenState extends State<PointsScreen> {
     return fallback;
   }
 
-  Future<PointsHistory> _fetchHistoryWithRefresh(int userId) async {
+  Future<PointsTransactionPage> _fetchTransactionsWithRefresh(
+      {String? cursor, required (DateTime?, DateTime?) dates}) async {
     try {
       final token = await _storage.getAccessToken();
       final tokenType = await _storage.getTokenType();
-      return await _pointsService.fetchUserPoints(
-        userId: userId,
+      return await _pointsService.fetchTransactions(
+        direction: _direction.name,
+        fromDate: dates.$1,
+        toDate: dates.$2,
+        cursor: cursor,
         accessToken: token,
         tokenType: tokenType,
       );
@@ -268,8 +276,11 @@ class _PointsScreenState extends State<PointsScreen> {
       final token = await _storage.getAccessToken();
       final tokenType = await _storage.getTokenType();
       try {
-        return await _pointsService.fetchUserPoints(
-          userId: userId,
+        return await _pointsService.fetchTransactions(
+          direction: _direction.name,
+          fromDate: dates.$1,
+          toDate: dates.$2,
+          cursor: cursor,
           accessToken: token,
           tokenType: tokenType,
         );
@@ -283,6 +294,71 @@ class _PointsScreenState extends State<PointsScreen> {
     }
   }
 
+  (DateTime?, DateTime?) get _selectedDates {
+    final today = walletTashkentDate(DateTime.now());
+    return switch (_period) {
+      _TransactionPeriod.sevenDays => (
+          DateTime(today.year, today.month, today.day - 6),
+          today
+        ),
+      _TransactionPeriod.thirtyDays => (
+          DateTime(today.year, today.month, today.day - 29),
+          today
+        ),
+      _TransactionPeriod.custom => (_customRange?.start, _customRange?.end),
+      _TransactionPeriod.all => (null, null),
+    };
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.extentAfter < 320) _loadMore();
+  }
+
+  Future<void> _loadMore({bool retry = false}) async {
+    if (_isLoading ||
+        _isLoadingMore ||
+        (_loadMoreFailed && !retry) ||
+        !_hasMore ||
+        _nextCursor == null) {
+      return;
+    }
+    final generation = _requestGeneration;
+    setState(() {
+      _isLoadingMore = true;
+      _loadMoreFailed = false;
+    });
+    try {
+      final page = await _fetchTransactionsWithRefresh(
+          cursor: _nextCursor, dates: _activeDates);
+      if (!mounted || generation != _requestGeneration) return;
+      final known = _entries.map((entry) => entry.id).toSet();
+      setState(() {
+        _entries = [
+          ..._entries,
+          ...page.items.where((entry) => known.add(entry.id)),
+        ];
+        _nextCursor = page.nextCursor;
+        _hasMore = page.hasMore;
+        _summary = page.summary;
+        _isLoadingMore = false;
+      });
+    } on PointsUnauthorizedException {
+      await AppNavigator.forceLogout();
+      if (!mounted) return;
+      setState(() {
+        _isLoadingMore = false;
+        _loadMoreFailed = true;
+      });
+    } catch (_) {
+      if (!mounted || generation != _requestGeneration) return;
+      setState(() {
+        _isLoadingMore = false;
+        _loadMoreFailed = true;
+      });
+    }
+  }
+
   Future<void> _handleView(AppStrings l10n, bool canView) async {
     if (!canView) return;
     if (!mounted) return;
@@ -290,6 +366,43 @@ class _PointsScreenState extends State<PointsScreen> {
       context,
       content: Text(l10n.pointsUpdatedSuccess),
     );
+  }
+
+  void _selectDirection(_TransactionDirection value) {
+    if (value == _direction) return;
+    setState(() {
+      _direction = value;
+      _entries = const [];
+      _isLoading = true;
+      _isLoadingMore = false;
+    });
+    _loadData();
+  }
+
+  Future<void> _selectPeriod(_TransactionPeriod value) async {
+    DateTimeRange? range = _customRange;
+    if (value == _TransactionPeriod.custom) {
+      final now = walletTashkentDate(DateTime.now());
+      range = await showDateRangePicker(
+        context: context,
+        firstDate: DateTime(2020),
+        lastDate: now,
+        initialDateRange: _customRange,
+        helpText: AppLocalizations.of(context).pointsPeriodCustom,
+        cancelText: AppLocalizations.of(context).commonCancel,
+        saveText: AppLocalizations.of(context).commonSave,
+      );
+      if (range == null || !mounted) return;
+    }
+    if (value == _period && range == _customRange) return;
+    setState(() {
+      _period = value;
+      _customRange = range;
+      _entries = const [];
+      _isLoading = true;
+      _isLoadingMore = false;
+    });
+    _loadData();
   }
 
   String _loyaltyHelper(AppStrings l10n) {
@@ -340,42 +453,81 @@ class _PointsScreenState extends State<PointsScreen> {
         : RefreshIndicator(
             onRefresh: _refresh,
             color: primaryColor,
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                defaultPadding,
-                24,
-                defaultPadding,
-                32,
-              ),
-              children: [
-                _PointsHero(
-                  title: l10n.pointsTitle,
-                  balanceLabel: _formatCurrency(balanceInt, isRu),
-                  helper: _loyaltyHelper(l10n),
-                  canView: canView,
-                  onView: () => _handleView(l10n, canView),
-                  ctaLabel: canView
-                      ? l10n.pointsViewButton
-                      : l10n.pointsViewLocked,
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  l10n.pointsHistoryTitle,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: titleColor,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(defaultPadding,
+                      WalletTokens.sectionGap, defaultPadding, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: WalletBalanceCard(
+                      title: l10n.pointsTitle,
+                      balanceLabel: formatWalletPoints(_balance,
+                          isRu: isRu, balance: true),
+                      unit: isRu ? 'балл' : 'ball',
+                      helper: _loyaltyHelper(l10n) == l10n.pointsHelper
+                          ? ''
+                          : _loyaltyHelper(l10n),
+                      progress: widget.threshold > 0
+                          ? (_balance / widget.threshold).clamp(0.0, 1.0)
+                          : 1,
+                      thresholdLabel: l10n.pointsWalletThreshold(
+                          formatWalletPoints(widget.threshold.toDouble(),
+                              isRu: isRu)),
+                      remainingLabel: l10n.pointsWalletRemaining(
+                          formatWalletPoints(widget.threshold - _balance,
+                              isRu: isRu, balance: true)),
+                      canView: canView,
+                      onView: () => _handleView(l10n, canView),
+                      ctaLabel: l10n.pointsViewButton,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  l10n.pointsScreenDescription,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: bodyTextColor,
-                    height: 1.4,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(defaultPadding,
+                      WalletTokens.sectionGap, defaultPadding, defaultPadding),
+                  sliver: SliverToBoxAdapter(
+                    child: Semantics(
+                      header: true,
+                      child: Text(l10n.pointsHistoryTitle,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700, color: titleColor)),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 18),
-                _buildHistorySection(l10n, isRu),
+                if (_errorMessage == null) ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                        defaultPadding, 0, defaultPadding, 0),
+                    sliver: SliverToBoxAdapter(
+                      child: WalletSummaryCard(
+                        creditLabel: l10n.pointsSummaryCredit,
+                        debitLabel: l10n.pointsSummaryDebit,
+                        credited: _summary.credited,
+                        debited: _summary.debited,
+                        isRu: isRu,
+                      ),
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(
+                        defaultPadding, defaultPadding, defaultPadding, 0),
+                    sliver: SliverToBoxAdapter(child: _buildFilters(l10n)),
+                  ),
+                  const SliverToBoxAdapter(
+                      child: SizedBox(height: defaultPadding)),
+                ],
+                SliverPadding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: defaultPadding),
+                  sliver: _buildHistorySection(l10n, isRu),
+                ),
+                _buildPaginationSliver(l10n),
+                SliverToBoxAdapter(
+                    child: SizedBox(
+                        height: WalletTokens.sectionGap +
+                            MediaQuery.paddingOf(context).bottom)),
               ],
             ),
           );
@@ -386,327 +538,163 @@ class _PointsScreenState extends State<PointsScreen> {
         title: Text(l10n.pointsScreenTitle),
         centerTitle: true,
       ),
-      body: body,
+      body: SafeArea(top: false, bottom: false, child: body),
     );
+  }
+
+  Widget _buildFilters(AppStrings l10n) {
+    Widget row(List<Widget> children) => SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              for (var index = 0; index < children.length; index++) ...[
+                if (index > 0) const SizedBox(width: AppSpacing.related),
+                children[index],
+              ],
+            ],
+          ),
+        );
+    final customLabel = _period == _TransactionPeriod.custom &&
+            _customRange != null
+        ? '${_formatShortDate(_customRange!.start)}–${_formatShortDate(_customRange!.end)}'
+        : l10n.pointsPeriodCustom;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      row([
+        WalletFilterButton(
+            key: const ValueKey('wallet-filter-all'),
+            label: l10n.pointsFilterAll,
+            selected: _direction == _TransactionDirection.all,
+            onPressed: () => _selectDirection(_TransactionDirection.all)),
+        WalletFilterButton(
+            key: const ValueKey('wallet-filter-credit'),
+            label: l10n.pointsFilterCredit,
+            selected: _direction == _TransactionDirection.credit,
+            onPressed: () => _selectDirection(_TransactionDirection.credit)),
+        WalletFilterButton(
+            key: const ValueKey('wallet-filter-debit'),
+            label: l10n.pointsFilterDebit,
+            selected: _direction == _TransactionDirection.debit,
+            onPressed: () => _selectDirection(_TransactionDirection.debit)),
+      ]),
+      const SizedBox(height: AppSpacing.related),
+      row([
+        WalletFilterButton(
+            key: const ValueKey('wallet-period-all'),
+            label: l10n.pointsPeriodAll,
+            selected: _period == _TransactionPeriod.all,
+            onPressed: () => _selectPeriod(_TransactionPeriod.all)),
+        WalletFilterButton(
+            key: const ValueKey('wallet-period-7'),
+            label: l10n.pointsPeriodSevenDays,
+            selected: _period == _TransactionPeriod.sevenDays,
+            onPressed: () => _selectPeriod(_TransactionPeriod.sevenDays)),
+        WalletFilterButton(
+            key: const ValueKey('wallet-period-30'),
+            label: l10n.pointsPeriodThirtyDays,
+            selected: _period == _TransactionPeriod.thirtyDays,
+            onPressed: () => _selectPeriod(_TransactionPeriod.thirtyDays)),
+        WalletFilterButton(
+            key: const ValueKey('wallet-period-custom'),
+            label: customLabel,
+            selected: _period == _TransactionPeriod.custom,
+            onPressed: () => _selectPeriod(_TransactionPeriod.custom)),
+      ]),
+    ]);
+  }
+
+  Widget _buildPaginationSliver(AppStrings l10n) {
+    if (_isLoadingMore) {
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.all(defaultPadding),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_loadMoreFailed) {
+      return SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+              defaultPadding, AppSpacing.related, defaultPadding, 0),
+          child: _PointsErrorCard(
+            message: l10n.pointsLoadMoreError,
+            onRetry: () => _loadMore(retry: true),
+            retryLabel: l10n.commonRetry,
+          ),
+        ),
+      );
+    }
+    return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 
   Widget _buildHistorySection(AppStrings l10n, bool isRu) {
     if (_errorMessage != null) {
-      return _PointsErrorCard(
-        message: l10n.pointsHistoryLoadError,
-        details: _errorMessage!,
+      return SliverToBoxAdapter(
+          child: _PointsErrorCard(
+        message: _errorMessage == l10n.pointsLoginRequired
+            ? l10n.pointsLoginRequired
+            : l10n.pointsHistoryLoadError,
         onRetry: () => _loadData(refresh: true),
         retryLabel: l10n.catalogRetry,
-      );
+      ));
     }
-
-    final entries = _entries.isNotEmpty
-        ? _entries
-            .map((entry) => _mapEntryToHistory(entry, l10n, isRu))
-            .toList()
-        : (_usingDemo ? PointsScreen._demoHistory : const []);
-
-    if (entries.isEmpty) {
-      return _EmptyHistoryCard(message: l10n.pointsHistoryEmpty);
+    final count = _entries.length;
+    if (count == 0) {
+      return SliverToBoxAdapter(
+          child: _EmptyHistoryCard(message: l10n.pointsHistoryEmpty));
     }
-
-    return Column(
-      children: [
-        if (_usingDemo)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                l10n.pointsHistoryDemoLabel,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: primaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ),
-          ),
-        if (_usingDemo) const SizedBox(height: 14),
-        ...entries.map(
-          (entry) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _HistoryTile(
-              entry: entry,
-              isRu: isRu,
-              l10n: l10n,
-            ),
-          ),
-        ),
-      ],
+    // Each row is built on demand. Only the outer corners are rounded, so the
+    // history reads as a single surface without eagerly laying out all entries.
+    return SliverList.builder(
+      itemCount: count,
+      itemBuilder: (context, index) {
+        final entry = _mapEntryToHistory(_entries[index], l10n, isRu);
+        return WalletTransactionRow(
+          key: ValueKey('wallet-transaction-${_entries[index].id}'),
+          title: entry.title,
+          date: entry.date,
+          amount: entry.amount,
+          groupLabel: index == 0 ||
+                  !_isSameDay(
+                      _entries[index - 1].createdAt, _entries[index].createdAt)
+              ? _dateGroupLabel(_entries[index].createdAt, l10n)
+              : null,
+          isRu: isRu,
+          first: index == 0,
+          last: index == count - 1,
+        );
+      },
     );
   }
+
+  String _dateGroupLabel(DateTime value, AppStrings l10n) {
+    final today = walletTashkentDate(DateTime.now());
+    final day = walletTashkentDate(value);
+    if (day == today) return l10n.pointsToday;
+    if (day == DateTime(today.year, today.month, today.day - 1)) {
+      return l10n.pointsYesterday;
+    }
+    return _formatShortDate(day);
+  }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      walletTashkentDate(a) == walletTashkentDate(b);
+
+  String _formatShortDate(DateTime value) =>
+      '${value.day.toString().padLeft(2, '0')}.${value.month.toString().padLeft(2, '0')}.${value.year}';
 
   _PointsHistoryEntry _mapEntryToHistory(
     PointsEntry entry,
     AppStrings l10n,
     bool isRu,
   ) {
-    final branchName = _branchNameForStore(entry.branchId);
     final isCredit = entry.amount >= 0;
-    final title = isCredit
-        ? l10n.pointsHistoryAdded
-        : l10n.pointsHistorySpent;
-    final dateText = _formatDate(entry.createdAt, isRu);
-    final subtitle =
-        entry.source == PointsSource.visit ? l10n.pointsSourceVisit : branchName;
+    final title = isCredit ? l10n.pointsHistoryAdded : l10n.pointsHistorySpent;
+    final dateText = _formatDate(walletTashkentWallTime(entry.createdAt), isRu);
     return _PointsHistoryEntry(
       title: title,
-      subtitle: subtitle,
       date: dateText,
-      amount: entry.amount.round(),
-      pending: false,
-    );
-  }
-
-  String _branchNameForStore(int? storeId) {
-    if (storeId == null) return 'Sardoba';
-    final match = _branchState.branches
-        .where((branch) => branch.storeId == storeId)
-        .toList();
-    if (match.isEmpty) return 'Sardoba';
-    return match.first.name;
-  }
-
-}
-
-class _PointsHero extends StatelessWidget {
-  const _PointsHero({
-    required this.title,
-    required this.balanceLabel,
-    required this.helper,
-    required this.canView,
-    required this.onView,
-    required this.ctaLabel,
-  });
-
-  final String title;
-  final String balanceLabel;
-  final String helper;
-  final bool canView;
-  final VoidCallback onView;
-  final String ctaLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFF9FBFF), Color(0xFFEFF4FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 30,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                alignment: Alignment.center,
-                child: const Icon(
-                  Icons.loyalty_rounded,
-                  color: primaryColor,
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      color: bodyTextColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    balanceLabel,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: titleColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Text(
-            helper,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: bodyTextColor,
-              height: 1.3,
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: canView ? onView : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    canView ? primaryColor : Colors.grey.shade400,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                disabledBackgroundColor: Colors.grey.shade300,
-                disabledForegroundColor: Colors.white70,
-              ),
-              child: Text(
-                ctaLabel,
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HistoryTile extends StatelessWidget {
-  const _HistoryTile({
-    required this.entry,
-    required this.isRu,
-    required this.l10n,
-  });
-
-  final _PointsHistoryEntry entry;
-  final bool isRu;
-  final AppStrings l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isPositive = entry.amount >= 0;
-    final amountLabel = _formatCurrency(entry.amount.abs(), isRu);
-    final valueColor =
-        entry.pending ? accentColor : (isPositive ? primaryColor : accentColor);
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF4F6FB),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              entry.pending
-                  ? Icons.timer_rounded
-                  : Icons.add_circle_outline_rounded,
-              color: entry.pending ? accentColor : primaryColor,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  entry.title,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: titleColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.pointsHistoryEarned(entry.subtitle),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: bodyTextColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  entry.date,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: bodyTextColor.withValues(alpha: 0.7),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${isPositive ? '+' : '−'}$amountLabel',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: valueColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: valueColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  entry.pending
-                      ? l10n.pointsStatusPending
-                      : (isPositive
-                          ? l10n.pointsStatusCompleted
-                          : l10n.pointsStatusSpent),
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: valueColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+      amount: entry.amount,
     );
   }
 }
@@ -719,17 +707,10 @@ class _EmptyHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(WalletTokens.cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,13 +736,11 @@ class _EmptyHistoryCard extends StatelessWidget {
 class _PointsErrorCard extends StatelessWidget {
   const _PointsErrorCard({
     required this.message,
-    required this.details,
     required this.onRetry,
     required this.retryLabel,
   });
 
   final String message;
-  final String details;
   final VoidCallback onRetry;
   final String retryLabel;
 
@@ -769,17 +748,10 @@ class _PointsErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(WalletTokens.cardPadding),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -791,17 +763,20 @@ class _PointsErrorCard extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            details,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: bodyTextColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
+          const SizedBox(height: defaultPadding),
+          ProductDetailPressable(
+            key: const ValueKey('wallet-retry'),
+            label: retryLabel,
             onPressed: onRetry,
-            child: Text(retryLabel),
+            child: Container(
+              constraints: const BoxConstraints(
+                  minHeight: ProductDetailTokens.touchTarget),
+              padding: const EdgeInsets.all(defaultPadding),
+              decoration: BoxDecoration(
+                  color: primaryColor,
+                  borderRadius: BorderRadius.circular(AppRadius.control)),
+              child: Text(retryLabel, style: kButtonTextStyle),
+            ),
           ),
         ],
       ),
@@ -812,31 +787,13 @@ class _PointsErrorCard extends StatelessWidget {
 class _PointsHistoryEntry {
   const _PointsHistoryEntry({
     required this.title,
-    required this.subtitle,
     required this.date,
     required this.amount,
-    this.pending = false,
   });
 
   final String title;
-  final String subtitle;
   final String date;
-  final int amount;
-  final bool pending;
-}
-
-String _formatCurrency(int value, bool isRu) {
-  final chars = value.toString().split('').reversed;
-  final buffer = StringBuffer();
-  var count = 0;
-  for (final char in chars) {
-    if (count != 0 && count % 3 == 0) buffer.write(' ');
-    buffer.write(char);
-    count++;
-  }
-  final formatted = buffer.toString().split('').reversed.join();
-  final suffix = isRu ? 'балл' : 'ball';
-  return '$formatted $suffix';
+  final double amount;
 }
 
 String _formatDate(DateTime date, bool isRu) {

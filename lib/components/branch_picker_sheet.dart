@@ -9,7 +9,7 @@ Future<void> showBranchPickerSheet(BuildContext context) async {
     context: context,
     isScrollControlled: true,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.panel)),
     ),
     builder: (_) => const _BranchPickerSheet(),
   );
@@ -76,7 +76,7 @@ class _BranchPickerSheet extends StatelessWidget {
                           ? primaryColor.withValues(alpha: 0.08)
                           : const Color(0xFFF6F8FC),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(AppRadius.card),
                       ),
                       leading: Icon(
                         Icons.storefront_outlined,

@@ -41,7 +41,7 @@ extension AppLocaleExtension on AppLocale {
 }
 
 class AppLanguage extends ChangeNotifier {
-  AppLocale _locale = AppLocale.uz;
+  AppLocale _locale = AppLocale.ru;
 
   AppLocale get locale => _locale;
 

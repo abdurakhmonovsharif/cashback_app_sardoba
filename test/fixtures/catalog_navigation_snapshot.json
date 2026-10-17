@@ -1,0 +1,214 @@
+{
+  "success": true,
+  "categories": [
+    {
+      "id": "47922569-ad91-48b2-b516-addd82c4b37c",
+      "name": "Салаты",
+      "slug": "salaty",
+      "items": [
+        {
+          "id": "24bb82e2-37dc-46ce-9487-36b608e0a786",
+          "name": "Айран (1л)",
+          "prices": [
+            {
+              "storeId": 139235,
+              "storeName": "Sardoba_Geofizika",
+              "price": 15000,
+              "disabled": false
+            },
+            {
+              "storeId": 139350,
+              "storeName": "Sardoba_Severniy",
+              "price": 15000,
+              "disabled": false
+            },
+            {
+              "storeId": 139458,
+              "storeName": "Sardoba_5MK",
+              "price": 15000,
+              "disabled": false
+            },
+            {
+              "storeId": 157757,
+              "storeName": "Sardoba_Gijduvon",
+              "price": 15000,
+              "disabled": false
+            }
+          ],
+          "images": [
+            "https://16a9564f-f8ec-42ba-a998-3027aa809e50.selstorage.ru/sardoba-co/97721/images/items/c5cab3c72ac32374b156ea2eb950fdce.JPEG",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/e27177ee-5d54-4728-90eb-fac7066a3251-500x250x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/3ace74ab-0a15-4e95-9498-2c9548889b97-500x250x100.webp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b9ccd6cd-00d1-4bcd-814f-87119deccf46",
+      "name": "Закуски",
+      "slug": "zakuski",
+      "items": [
+        {
+          "id": "a0ecfc8d-3632-4c03-b076-a52ef01621f1",
+          "name": "Холодная тарелка (500гр)",
+          "prices": [
+            {
+              "storeId": 139235,
+              "storeName": "Sardoba_Geofizika",
+              "price": 180000,
+              "disabled": false
+            },
+            {
+              "storeId": 139350,
+              "storeName": "Sardoba_Severniy",
+              "price": 180000,
+              "disabled": true
+            },
+            {
+              "storeId": 139458,
+              "storeName": "Sardoba_5MK",
+              "price": 180000,
+              "disabled": true
+            },
+            {
+              "storeId": 157757,
+              "storeName": "Sardoba_Gijduvon",
+              "price": 180000,
+              "disabled": false
+            }
+          ],
+          "images": [
+            "https://16a9564f-f8ec-42ba-a998-3027aa809e50.selstorage.ru/sardoba-co/97721/images/items/4feace1dbf9895b31a00d7d8440938eb.JPEG",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/0d9e3492-67f5-4a9b-b4a7-4f0f108550be-500x250x100.webp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "108b5395-5802-4a40-ab46-103b47853002",
+      "name": "Первые блюда",
+      "slug": "pervye-bliuda",
+      "items": [
+        {
+          "id": "0923e869-a8c8-4a25-975b-b1867995864a",
+          "name": "Хаш",
+          "prices": [
+            {
+              "storeId": 139235,
+              "storeName": "Sardoba_Geofizika",
+              "price": 45000,
+              "disabled": false
+            },
+            {
+              "storeId": 139350,
+              "storeName": "Sardoba_Severniy",
+              "price": 45000,
+              "disabled": false
+            },
+            {
+              "storeId": 139458,
+              "storeName": "Sardoba_5MK",
+              "price": 45000,
+              "disabled": false
+            },
+            {
+              "storeId": 157757,
+              "storeName": "Sardoba_Gijduvon",
+              "price": 45000,
+              "disabled": false
+            }
+          ],
+          "images": [
+            "https://16a9564f-f8ec-42ba-a998-3027aa809e50.selstorage.ru/sardoba-co/97721/images/items/64b03a983d980b8a264233052a235499.JPEG",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/dd7fc93d-4e1c-4799-a289-bab94c937b45-500x250x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/b6379816-174a-48c8-adc1-233cc0a31357-500x250x100.webp"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e42343ad-7da5-4908-8082-f3138d506f83",
+      "name": "Вторые блюда",
+      "slug": "vtorye-bliuda",
+      "items": [
+        {
+          "id": "bd5249ba-5a69-4b2e-ab16-adf5b8c4fd6e",
+          "name": "Варахша (500гр)",
+          "prices": [
+            {
+              "storeId": 139235,
+              "storeName": "Sardoba_Geofizika",
+              "price": 165000,
+              "disabled": true
+            },
+            {
+              "storeId": 139350,
+              "storeName": "Sardoba_Severniy",
+              "price": 165000,
+              "disabled": false
+            },
+            {
+              "storeId": 139458,
+              "storeName": "Sardoba_5MK",
+              "price": 165000,
+              "disabled": false
+            },
+            {
+              "storeId": 157757,
+              "storeName": "Sardoba_Gijduvon",
+              "price": 165000,
+              "disabled": false
+            }
+          ],
+          "images": [
+            "https://16a9564f-f8ec-42ba-a998-3027aa809e50.selstorage.ru/sardoba-co/97721/images/items/1bf54cd420b6c4e019892370adf4ed6c.JPEG",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/51167/53bf82a4-158a-48bb-b877-f9af212cb6e3-500x250x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-44x44x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-88x88x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-254x196x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-508x392x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-376x276x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-752x552x100.webp",
+            "https://f3de18c8-cd97-436c-ad9e-8e1dc2839628.selstorage.ru/ru/60922/52103fe3-66d9-4952-b817-96a3837ce276-500x250x100.webp"
+          ]
+        }
+      ]
+    }
+  ]
+}

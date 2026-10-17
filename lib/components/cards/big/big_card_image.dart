@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../constants.dart';
+
 class BigCardImage extends StatelessWidget {
   const BigCardImage({
     super.key,
@@ -12,7 +14,7 @@ class BigCardImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        borderRadius: const BorderRadius.all(Radius.circular(12)),
+        borderRadius: const BorderRadius.all(Radius.circular(AppRadius.card)),
         image: DecorationImage(
           // for newtowk image use NetworkImage()
           image: AssetImage(image),

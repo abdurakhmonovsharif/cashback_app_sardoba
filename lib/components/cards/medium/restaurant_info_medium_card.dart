@@ -32,7 +32,7 @@ class RestaurantInfoMediumCard extends StatelessWidget {
             AspectRatio(
               aspectRatio: 1.25,
               child: ClipRRect(
-                borderRadius: const BorderRadius.all(Radius.circular(10)),
+                borderRadius: const BorderRadius.all(Radius.circular(AppRadius.card)),
                 child: Image.asset(image, fit: BoxFit.cover),
               ),
             ),

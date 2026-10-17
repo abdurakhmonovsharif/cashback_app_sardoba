@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CombinedCardWidget extends StatelessWidget {
@@ -35,7 +37,7 @@ class CombinedCardWidget extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -99,7 +101,7 @@ class CombinedCardWidget extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(AppRadius.panel),
         child: card,
       ),
     );

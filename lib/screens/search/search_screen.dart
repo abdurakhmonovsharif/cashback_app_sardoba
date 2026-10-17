@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -10,6 +11,7 @@ import '../../models/catalog.dart';
 import '../../services/branch_state.dart';
 import '../../services/catalog_repository.dart';
 import '../catalog/product_details_screen.dart';
+import '../catalog/product_detail_pressable.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -68,6 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _categories = payload.categories;
         _isCatalogLoading = false;
       });
+      if (_controller.text.trim().isNotEmpty) _performSearch();
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -87,11 +90,13 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
     setState(() => _isSearching = true);
-    _debounce = Timer(const Duration(seconds: 2), _performSearch);
+    _debounce = Timer(const Duration(milliseconds: 250), _performSearch);
   }
 
   void _performSearch() {
     if (!mounted) return;
+    _debounce?.cancel();
+    if (_isCatalogLoading) return;
     final query = _controller.text.trim();
     if (query.isEmpty) {
       setState(() {
@@ -120,6 +125,11 @@ class _SearchScreenState extends State<SearchScreen> {
       _results = matches;
       _isSearching = false;
     });
+  }
+
+  void _clearSearch() {
+    _controller.clear();
+    _onQueryChanged('');
   }
 
   List<String> _queryForms(String raw) {
@@ -395,58 +405,80 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.searchHint),
+        title: Text(l10n.searchAction),
         centerTitle: true,
       ),
       backgroundColor: screenBackgroundColor,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            defaultPadding,
-            16,
-            defaultPadding,
-            24,
-          ),
+          padding:
+              const EdgeInsets.fromLTRB(defaultPadding, 12, defaultPadding, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                l10n.catalogTitle,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: titleColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 12),
               TextField(
                 controller: _controller,
                 autofocus: true,
                 onChanged: _onQueryChanged,
+                onSubmitted: (_) => _performSearch(),
+                autocorrect: false,
+                enableSuggestions: false,
+                textCapitalization: TextCapitalization.none,
                 textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   hintText: l10n.searchHint,
-                  contentPadding: kTextFieldPadding,
+                  filled: true,
+                  fillColor: Colors.white,
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: defaultPadding,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    borderSide: const BorderSide(color: appBorderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    borderSide: const BorderSide(color: appBorderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    borderSide:
+                        const BorderSide(color: primaryColor, width: 1.5),
+                  ),
                   prefixIcon: const Icon(
                     Icons.search_rounded,
                     color: bodyTextColor,
                   ),
+                  suffixIcon: _controller.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: l10n.clearSearch,
+                          onPressed: _clearSearch,
+                          icon: const Icon(Icons.close_rounded),
+                        ),
                 ),
               ),
-              const SizedBox(height: 12),
-              _ResultsPanel(
-                query: _controller.text,
-                l10n: l10n,
-                isCatalogLoading: _isCatalogLoading,
-                isSearching: _isSearching,
-                error: _catalogError,
-                results: _results,
-                resolvePriceInfo: (item) => _resolvePriceInfo(item, l10n),
-                onRetry: _loadCatalog,
-                onSelect: _openProductDetails,
+              const SizedBox(height: defaultPadding),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: _ResultsPanel(
+                    query: _controller.text,
+                    l10n: l10n,
+                    isCatalogLoading: _isCatalogLoading,
+                    isSearching: _isSearching,
+                    error: _catalogError,
+                    results: _results,
+                    resolvePriceInfo: (item) => _resolvePriceInfo(item, l10n),
+                    onRetry: _loadCatalog,
+                    onSelect: _openProductDetails,
+                  ),
+                ),
               ),
             ],
           ),
@@ -481,64 +513,104 @@ class _ResultsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (query.trim().isEmpty) return const SizedBox.shrink();
+    if (isCatalogLoading) {
+      return _LoadingState(label: l10n.commonLoading);
+    }
+    if (error != null) {
+      return _ErrorState(
+        message: l10n.catalogLoadError,
+        retryLabel: l10n.catalogRetry,
+        onRetry: onRetry,
+      );
+    }
+    if (isSearching) {
+      return _LoadingState(label: l10n.searchLoading);
+    }
+    if (query.trim().isEmpty) {
+      return _EmptyResults(
+        icon: Icons.search_rounded,
+        label: l10n.searchStartTitle,
+        subtitle: l10n.searchStartSubtitle,
+      );
+    }
+    if (results.isEmpty) {
+      return _EmptyResults(
+        icon: Icons.search_off_rounded,
+        label: l10n.searchNoResultsTitle,
+        subtitle: l10n.searchNoResultsSubtitle,
+      );
+    }
 
-    final theme = Theme.of(context);
-    final isRu = l10n.locale == AppLocale.ru;
-    final searchingLabel = isRu ? 'Идёт поиск...' : 'Qidirilmoqda...';
-    final emptyLabel = isRu ? 'Ничего не найдено' : 'Hech narsa topilmadi';
-    final hasResults = results.isNotEmpty;
-
-    return Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(maxHeight: 420),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final desiredHeight = SearchTokens.resultHeaderHeight +
+            results.length * SearchTokens.resultRowMinHeight;
+        final panelHeight = math.min(
+          constraints.maxHeight,
+          math.min(SearchTokens.resultPanelMaxHeight, desiredHeight),
+        );
+        return Container(
+          width: double.infinity,
+          height: panelHeight,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: appBorderColor),
           ),
-        ],
-      ),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: isCatalogLoading
-            ? _LoadingState(label: l10n.commonLoading)
-            : error != null
-                ? _ErrorState(
-                    message: l10n.catalogLoadError,
-                    details: error!,
-                    retryLabel: l10n.catalogRetry,
-                    onRetry: onRetry,
-                  )
-                : isSearching
-                    ? _LoadingState(label: searchingLabel)
-                    : hasResults
-                        ? ListView.separated(
-                            padding: const EdgeInsets.all(12),
-                            shrinkWrap: true,
-                            physics: const BouncingScrollPhysics(),
-                            itemBuilder: (context, index) {
-                              final result = results[index];
-                              final priceInfo = resolvePriceInfo(result.item);
-                              return _SearchResultCard(
-                                result: result,
-                                priceInfo: priceInfo,
-                                onTap: () => onSelect(result),
-                              );
-                            },
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(height: 8),
-                            itemCount: results.length,
-                          )
-                        : _EmptyResults(
-                            theme: theme,
-                            label: emptyLabel,
-                          ),
-      ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    defaultPadding,
+                    defaultPadding,
+                    defaultPadding,
+                    AppSpacing.related,
+                  ),
+                  child: Text(
+                    l10n.searchResultCount(results.length),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: bodyTextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                const Divider(
+                  height: 1,
+                  thickness: 1,
+                  color: appBorderColor,
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.related,
+                    ),
+                    itemBuilder: (context, index) {
+                      final result = results[index];
+                      final priceInfo = resolvePriceInfo(result.item);
+                      return _SearchResultCard(
+                        result: result,
+                        priceInfo: priceInfo,
+                        onTap: () => onSelect(result),
+                      );
+                    },
+                    separatorBuilder: (_, __) => const Divider(
+                      height: 1,
+                      thickness: 1,
+                      indent: SearchTokens.resultThumbSize + 24,
+                      endIndent: defaultPadding,
+                      color: appBorderColor,
+                    ),
+                    itemCount: results.length,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -556,53 +628,72 @@ class _SearchResultCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final imageUrl =
         result.item.images.isNotEmpty ? result.item.images.first : null;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            children: [
-              _ProductThumb(imageUrl: imageUrl),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      result.item.name,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: titleColor,
-                        fontWeight: FontWeight.w700,
+    return ProductDetailPressable(
+      label: '${result.item.name}, ${result.category.name}, ${priceInfo.label}',
+      onPressed: onTap,
+      child: ColoredBox(
+        color: Colors.white,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: SearchTokens.resultRowMinHeight,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: defaultPadding,
+              vertical: AppSpacing.related,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _ProductThumb(imageUrl: imageUrl),
+                const SizedBox(width: AppSpacing.related),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        result.item.name,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: titleColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      priceInfo.label,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: priceInfo.color,
-                        fontWeight: priceInfo.hasPrice
-                            ? FontWeight.w700
-                            : FontWeight.w600,
+                      const SizedBox(height: 2),
+                      Text(
+                        result.category.name,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: bodyTextColor,
+                            ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: AppSpacing.related),
+                      Text(
+                        priceInfo.label,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: priceInfo.color,
+                              fontWeight: FontWeight.w600,
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: bodyTextColor,
-              ),
-            ],
+                const SizedBox(width: AppSpacing.related),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: bodyTextColor,
+                  size: 20,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -618,18 +709,19 @@ class _ProductThumb extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 72,
-      height: 72,
+      width: SearchTokens.resultThumbSize,
+      height: SearchTokens.resultThumbSize,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.control),
         color: screenBackgroundColor,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.control),
         child: imageUrl != null
             ? Image.network(
                 imageUrl!,
                 fit: BoxFit.cover,
+                excludeFromSemantics: true,
                 errorBuilder: (_, __, ___) =>
                     const _ThumbPlaceholder(icon: Icons.broken_image_outlined),
                 loadingBuilder: (context, child, progress) {
@@ -653,7 +745,7 @@ class _ThumbPlaceholder extends StatelessWidget {
     return Container(
       color: screenBackgroundColor,
       alignment: Alignment.center,
-      child: Icon(icon, color: bodyTextColor),
+      child: ExcludeSemantics(child: Icon(icon, color: bodyTextColor)),
     );
   }
 }
@@ -666,25 +758,32 @@ class _LoadingState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
+    return Center(
+      child: Semantics(
+        liveRegion: true,
+        child: Padding(
+          padding: const EdgeInsets.all(defaultPadding),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: AppSpacing.related),
+              Flexible(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: bodyTextColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: bodyTextColor,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -692,30 +791,69 @@ class _LoadingState extends StatelessWidget {
 
 class _EmptyResults extends StatelessWidget {
   const _EmptyResults({
-    required this.theme,
+    required this.icon,
     required this.label,
+    required this.subtitle,
   });
 
-  final ThemeData theme;
+  final IconData icon;
   final String label;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.search_off_rounded, color: bodyTextColor, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: bodyTextColor,
-              fontWeight: FontWeight.w600,
+    final theme = Theme.of(context);
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: const EdgeInsets.all(defaultPadding),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: math.max(0, constraints.maxHeight - defaultPadding * 2),
+          ),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ExcludeSemantics(
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: const BoxDecoration(
+                        color: screenBackgroundColor,
+                        shape: BoxShape.circle,
+                      ),
+                      alignment: Alignment.center,
+                      child: Icon(icon, color: primaryColor, size: 28),
+                    ),
+                  ),
+                  const SizedBox(height: defaultPadding),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      label,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: titleColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.related),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: bodyTextColor,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -724,45 +862,50 @@ class _EmptyResults extends StatelessWidget {
 class _ErrorState extends StatelessWidget {
   const _ErrorState({
     required this.message,
-    required this.details,
     required this.retryLabel,
     required this.onRetry,
   });
 
   final String message;
-  final String details;
   final String retryLabel;
   final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            message,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: titleColor,
-              fontWeight: FontWeight.w700,
-            ),
-            textAlign: TextAlign.center,
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(defaultPadding),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 320),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const ExcludeSemantics(
+                child: Icon(
+                  Icons.cloud_off_outlined,
+                  color: bodyTextColor,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.related),
+              Text(
+                message,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: titleColor,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.related),
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(retryLabel),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            details,
-            style: theme.textTheme.bodySmall?.copyWith(color: bodyTextColor),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
-            label: Text(retryLabel),
-          ),
-        ],
+        ),
       ),
     );
   }

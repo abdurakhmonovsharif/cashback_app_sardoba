@@ -54,7 +54,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(AppRadius.panel),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.04),
@@ -138,12 +138,12 @@ class _ForgotPassFormState extends State<ForgotPassForm>
   }
 
   InputDecoration _buildInputDecoration(String hint, {Widget? suffix}) {
-    const borderRadius = BorderRadius.all(Radius.circular(14));
+    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFB0B6C3), fontSize: 15),
+      hintStyle: const TextStyle(color: bodyTextColor, fontSize: 15),
       filled: true,
-      fillColor: const Color(0xFFF6F8FC),
+      fillColor: screenBackgroundColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       border: const OutlineInputBorder(
         borderRadius: borderRadius,
@@ -191,9 +191,9 @@ class _ForgotPassFormState extends State<ForgotPassForm>
           Text(
             "Enter your phone",
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: titleColor.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w600,
-                ) ??
+                      color: titleColor.withValues(alpha: 0.8),
+                      fontWeight: FontWeight.w600,
+                    ) ??
                 const TextStyle(
                   color: titleColor,
                   fontWeight: FontWeight.w600,

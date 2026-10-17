@@ -5,16 +5,19 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../models/points_history.dart';
+import '../models/points_transaction_page.dart';
 import 'auth_storage.dart';
 
 class PointsService {
   PointsService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+  })  : _dio =
+            dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
         _ownsDio = dio == null;
 
   static const String _pointsPath = '/api/v1/cashback/user';
+  static const String _transactionsPath = '/api/v1/cashback/me/transactions';
 
   final Dio _dio;
   final bool _ownsDio;
@@ -66,6 +69,68 @@ class PointsService {
           ? 'Failed to load points data (status $status).'
           : (error.message ?? 'Failed to load points data.');
       throw PointsServiceException(message);
+    } on FormatException catch (error) {
+      throw PointsServiceException(
+        'Failed to parse points entries. ${error.message}',
+      );
+    }
+  }
+
+  Future<PointsTransactionPage> fetchTransactions({
+    String direction = 'all',
+    DateTime? fromDate,
+    DateTime? toDate,
+    String? cursor,
+    int limit = 20,
+    String? accessToken,
+    String? tokenType,
+  }) async {
+    final storage = AuthStorage.instance;
+    final token = accessToken ?? await storage.getAccessToken();
+    if (token == null || token.isEmpty) {
+      throw const PointsServiceException('Not authenticated.');
+    }
+    String scheme = tokenType ?? await storage.getTokenType() ?? 'Bearer';
+    scheme = scheme.trim();
+    if (scheme.isEmpty) scheme = 'Bearer';
+    final normalizedScheme =
+        scheme.toLowerCase() == 'bearer' ? 'Bearer' : scheme;
+    String date(DateTime value) => '${value.year.toString().padLeft(4, '0')}-'
+        '${value.month.toString().padLeft(2, '0')}-'
+        '${value.day.toString().padLeft(2, '0')}';
+    final query = <String, dynamic>{
+      'direction': direction,
+      'limit': limit,
+      if (fromDate != null) 'from_date': date(fromDate),
+      if (toDate != null) 'to_date': date(toDate),
+      if (cursor != null && cursor.isNotEmpty) 'cursor': cursor,
+    };
+    try {
+      final response = await _dio.get(
+        _transactionsPath,
+        queryParameters: query,
+        options: Options(
+          headers: {'Authorization': '$normalizedScheme $token'},
+        ),
+      );
+      dynamic payload = response.data;
+      if (payload is String && payload.isNotEmpty) {
+        payload = jsonDecode(payload);
+      }
+      if (payload is! Map<String, dynamic>) {
+        throw const PointsServiceException('Unexpected transaction payload.');
+      }
+      return PointsTransactionPage.fromJson(payload);
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      if (status == 401) {
+        throw const PointsUnauthorizedException('Unauthorized');
+      }
+      throw PointsServiceException(
+        status != null
+            ? 'Failed to load points data (status $status).'
+            : (error.message ?? 'Failed to load points data.'),
+      );
     } on FormatException catch (error) {
       throw PointsServiceException(
         'Failed to parse points entries. ${error.message}',

@@ -5,7 +5,7 @@
     import flutter_local_notifications
 
     @main
-    @objc class AppDelegate: FlutterAppDelegate {
+    @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
 
         override func application(
             _ application: UIApplication,
@@ -25,13 +25,14 @@
             // 3️⃣ Yandex MapKit initialize
             configureYandexMapKit()
 
-            // 4️⃣ Flutter pluginlarni ro‘yxatdan o‘tkazish
-            GeneratedPluginRegistrant.register(with: self)
-
             return super.application(
                 application,
                 didFinishLaunchingWithOptions: launchOptions
             )
+        }
+
+        func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+            GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
         }
 
         // 🔥 iOS foreground banner & sound ko‘rsatish
