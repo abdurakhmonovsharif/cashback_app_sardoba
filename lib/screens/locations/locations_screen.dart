@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yandex_mapkit/yandex_mapkit.dart';
 
@@ -60,7 +59,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
   final BranchState _branchState = BranchState.instance;
   late Branch _activeBranch = _branchState.activeBranch;
   YandexMapController? _mapController;
-  bool _isRequestingLocation = false;
   bool _disposed = false;
   bool _mapReady = false;
   bool _isBranchPickerOpen = false;
@@ -116,84 +114,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
         onTap: (_, __) => _selectBranch(branch),
       );
     }).toList(growable: false);
-  }
-
-  Future<void> _requestLocationPermission() async {
-    if (!mounted || _isRequestingLocation) return;
-    _isRequestingLocation = true;
-    setState(() {});
-    try {
-      final strings = AppLocalizations.of(context);
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _showLocationSnack(strings.locationServicesDisabledMessage);
-        return;
-      }
-
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (!mounted) return;
-      if (permission != LocationPermission.always &&
-          permission != LocationPermission.whileInUse) {
-        _showLocationSnack(strings.locationPermissionDeniedMessage);
-        return;
-      }
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
-      ).timeout(const Duration(seconds: 5));
-      if (!mounted) return;
-
-      final point = Point(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
-      final nearest = _nearestBranchTo(point);
-      if (nearest != null) {
-        _branchState.selectBranch(nearest);
-      }
-    } catch (error) {
-      debugPrint('Failed to determine location: $error');
-      if (mounted) {
-        _showLocationSnack(
-          AppLocalizations.of(context).locationPermissionDeniedMessage,
-        );
-      }
-    } finally {
-      _isRequestingLocation = false;
-      if (mounted) setState(() {});
-    }
-  }
-
-  Branch? _nearestBranchTo(Point userPoint) {
-    if (_validBranches.isEmpty) return null;
-    Branch? closest;
-    double minDistance = double.infinity;
-    for (final branch in _validBranches) {
-      final distance = _distanceMeters(branch.point, userPoint);
-      if (distance < minDistance) {
-        minDistance = distance;
-        closest = branch;
-      }
-    }
-    return closest;
-  }
-
-  double _distanceMeters(Point a, Point b) {
-    const earthRadius = 6371000.0;
-    final dLat = _degToRad(b.latitude - a.latitude);
-    final dLon = _degToRad(b.longitude - a.longitude);
-    final lat1 = _degToRad(a.latitude);
-    final lat2 = _degToRad(b.latitude);
-
-    final aCalc = math.sin(dLat / 2) * math.sin(dLat / 2) +
-        math.sin(dLon / 2) *
-            math.sin(dLon / 2) *
-            math.cos(lat1) *
-            math.cos(lat2);
-    final c = 2 * math.atan2(math.sqrt(aCalc), math.sqrt(1 - aCalc));
-    return earthRadius * c;
   }
 
   double _degToRad(double value) => value * math.pi / 180.0;
@@ -357,13 +277,6 @@ class _LocationsScreenState extends State<LocationsScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _ZoomButton(
-                      icon: Icons.my_location_rounded,
-                      tooltip: l10n.locationUseCurrent,
-                      onPressed: _requestLocationPermission,
-                      isLoading: _isRequestingLocation,
-                    ),
-                    const SizedBox(height: 8),
                     _MapDirectionsButton(
                       tooltip: l10n.locationDirectionsFor(_activeBranch.name),
                       onPressed: () => _openDirections(_activeBranch),
@@ -919,13 +832,11 @@ class _ZoomButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.onPressed,
-    this.isLoading = false,
   });
 
   final IconData icon;
   final String tooltip;
   final VoidCallback onPressed;
-  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -945,12 +856,7 @@ class _ZoomButton extends StatelessWidget {
           child: IconButton(
             onPressed: onPressed,
             style: IconButton.styleFrom(shape: const CircleBorder()),
-            icon: isLoading
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Icon(icon, color: titleColor),
+            icon: Icon(icon, color: titleColor),
           ),
         ),
       ),

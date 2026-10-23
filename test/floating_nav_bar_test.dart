@@ -8,7 +8,6 @@ import 'package:sardoba_app/app_localizations.dart';
 import 'package:sardoba_app/components/floating_nav_bar.dart';
 import 'package:sardoba_app/constants.dart';
 import 'package:sardoba_app/navigation/app_nav_bar_layout.dart';
-import 'package:sardoba_app/utils/responsive_layout.dart';
 
 void main() {
   Future<void> showNav(
@@ -43,9 +42,8 @@ void main() {
             textScaler: TextScaler.linear(scale),
             disableAnimations: reducedMotion,
           ),
-          child: ResponsiveViewport(
-              child: AppNavBarViewport(
-                  child: Scaffold(
+          child: AppNavBarViewport(
+              child: Scaffold(
             body: Align(
               alignment: Alignment.bottomCenter,
               child: ConstrainedBox(
@@ -63,7 +61,7 @@ void main() {
                 }),
               ),
             ),
-          ))),
+          )),
         ),
       ),
     ));

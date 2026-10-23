@@ -27,6 +27,26 @@ class AppStrings {
 
   bool get _isRu => locale == AppLocale.ru;
 
+  // Mandatory app update
+  String get updateCheckMessage =>
+      _isRu ? 'Проверяем наличие обновления…' : 'Yangilanish tekshirilmoqda…';
+  String get updateRequiredTitle =>
+      _isRu ? 'Доступна новая версия' : 'Yangi versiya mavjud';
+  String get updateRequiredMessage => _isRu
+      ? 'Чтобы продолжить пользоваться Sardoba, обновите приложение.'
+      : 'Sardoba’dan foydalanishni davom ettirish uchun ilovani yangilang.';
+  String get updateAction =>
+      _isRu ? 'Обновить приложение' : 'Ilovani yangilash';
+  String get updateStoreHint => _isRu
+      ? 'Обновление откроется в официальном магазине приложений.'
+      : 'Yangilanish rasmiy ilovalar do‘konida ochiladi.';
+  String get optionalUpdateTitle =>
+      _isRu ? 'Доступно обновление' : 'Yangilanish mavjud';
+  String get optionalUpdateMessage => _isRu
+      ? 'Хотите открыть магазин приложений и обновить Sardoba?'
+      : 'Sardoba’ni yangilash uchun ilovalar do‘konini ochasizmi?';
+  String get updateLater => _isRu ? 'Позже' : 'Keyinroq';
+
   String authError(AuthServiceException error) {
     final localized = _localizedFromMap(error.localizedMessages);
     return localized ?? _cleanError(error.message) ?? commonErrorTryAgain;
@@ -289,8 +309,6 @@ class AppStrings {
       _isRu ? 'Список филиалов' : 'Filiallar roʻyxati';
   String get locationsSearchHint =>
       _isRu ? 'Поиск филиала или адреса' : 'Filial yoki manzilni qidiring';
-  String get locationUseCurrent =>
-      _isRu ? 'Моё местоположение' : 'Joriy joylashuvim';
   String get locationNearby => _isRu ? 'Рядом' : 'Yaqin atrofda';
   String get locationOpenNow => _isRu ? 'Открыто сейчас' : 'Hozir ochiq';
   String get locationSortedNearby =>
@@ -309,26 +327,10 @@ class AppStrings {
   String get locationsDirectionsError => _isRu
       ? 'Не удалось открыть приложение карт.'
       : 'Xarita ilovasini ochib boʻlmadi.';
-  String get locationPermissionTitle => _isRu
-      ? '📍 Необходимо ваше местоположение'
-      : '📍 Sizning joylashuvingiz kerak';
-  String get locationPermissionDescription => _isRu
-      ? 'Разрешите доступ к вашей геолокации, чтобы найти ближайший филиал.'
-      : 'Eng yaqin filialni topish uchun joylashuvingizga ruxsat bering.';
-  String get locationPermissionAllow => _isRu ? 'Разрешить' : 'Ruxsat berish';
-  String get locationPermissionDeny => _isRu ? 'Отклонить' : 'Rad etish';
-  String get locationPermissionHint => _isRu
-      ? 'Доступ используется только для определения ближайшего филиала.'
-      : 'Joylashuv faqat eng yaqin filialni aniqlash uchun ishlatiladi.';
-  String get locationPermissionDeniedMessage => _isRu
-      ? 'Без доступа к геолокации мы не сможем найти ближайший филиал.'
-      : 'Joylashuvga ruxsat bo‘lmasa, eng yaqin filialni topa olmaymiz.';
-  String get locationServicesDisabledMessage => _isRu
-      ? 'Включите службы геолокации, чтобы показать ближайший филиал.'
-      : 'Eng yaqin filialni ko‘rsatish uchun joylashuv xizmatlarini yoqing.';
-
   // Profile
   String get profileTitle => _isRu ? 'Профиль' : 'Profil';
+  String profileAppVersion(String version) =>
+      _isRu ? 'Версия $version' : 'Versiya $version';
   String get profileGuestName => _isRu ? 'Гость' : 'Mehmon';
   String get profileGuestLoginCta =>
       _isRu ? 'Войти / Зарегистрироваться' : 'Kirish / Roʻyxatdan oʻtish';
@@ -518,6 +520,15 @@ class AppStrings {
       _isRu ? 'Выберите дату' : 'Sanani tanlang';
   String get profileDobValidation =>
       _isRu ? 'Укажите дату рождения' : 'Tugʻilgan sanani kiriting';
+  String get profileDobInvalid =>
+      _isRu ? 'Введите корректную дату' : 'Sanani toʻgʻri kiriting';
+  String get profileDobCalendarMode => _isRu ? 'Календарь' : 'Kalendar';
+  String get profileDobInputMode => _isRu ? 'Ввести дату' : 'Sana kiritish';
+  String get profileDobConfirm => _isRu ? 'Готово' : 'Tayyor';
+  String get profileDobSwitchToCalendar =>
+      _isRu ? 'Выбрать в календаре' : 'Kalendarni ochish';
+  String get profileDobSwitchToInput =>
+      _isRu ? 'Ввести дату' : 'Sanani kiritish';
   String formatDateDdMMyyyy(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');

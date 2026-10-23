@@ -9,13 +9,16 @@ import '../models/loyalty_qr.dart';
 import '../models/points_entry.dart';
 import '../models/loyalty_summary.dart';
 import '../models/login_response.dart';
+import 'app_api_client.dart';
+import 'app_update_service.dart';
 
 class AuthService {
   AuthService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio =
-            dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+  })  : _dio = AppApiClient.configure(
+          dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+        ),
         _ownsDio = dio == null;
 
   static const String _requestOtpPath = '/api/v1/auth/client/request-otp';
@@ -216,6 +219,11 @@ class AuthService {
       }
       return profile;
     } on DioException catch (error) {
+      if (error.error is AppVersionResolutionException) {
+        throw AuthVersionResolutionException(
+          (error.error as AppVersionResolutionException).message,
+        );
+      }
       if (error.response?.statusCode == 401) {
         throw AuthUnauthorizedException(
           'Session expired. Please sign in again.',
@@ -387,6 +395,11 @@ class AuthService {
       final map = _asMap(body) ?? <String, dynamic>{};
       return _tokenResponseFromMap(map);
     } on DioException catch (error) {
+      if (error.error is AppVersionResolutionException) {
+        throw AuthVersionResolutionException(
+          (error.error as AppVersionResolutionException).message,
+        );
+      }
       final status = error.response?.statusCode;
       if (status == 401 || status == 403) {
         throw AuthUnauthorizedException(
@@ -394,6 +407,21 @@ class AuthService {
         );
       }
       final localized = _localizedMessagesFromResponse(error.response?.data);
+      dynamic responseBody = error.response?.data;
+      if (responseBody is String) {
+        try {
+          responseBody = jsonDecode(responseBody);
+        } on FormatException {
+          responseBody = null;
+        }
+      }
+      if (status == 503 &&
+          _asMap(responseBody)?['code'] == 'APP_UPDATE_REQUIRED') {
+        throw AuthUpdateRequiredException(
+          localized?.values.first ?? 'App update required.',
+          localizedMessages: localized,
+        );
+      }
       final message = localized?.values.first ??
           _errorMessageFromResponse(error) ??
           'Failed to refresh tokens.';
@@ -650,6 +678,9 @@ class AuthService {
   }
 
   String? _errorMessageFromResponse(DioException exception) {
+    if (exception.error is AppVersionResolutionException) {
+      return (exception.error as AppVersionResolutionException).message;
+    }
     final data = exception.response?.data;
     final localized = _localizedMessagesFromResponse(data);
     if (localized != null && localized.isNotEmpty) {
@@ -777,4 +808,15 @@ class AuthServiceException implements Exception {
 
 class AuthUnauthorizedException extends AuthServiceException {
   AuthUnauthorizedException(super.message);
+}
+
+class AuthUpdateRequiredException extends AuthServiceException {
+  AuthUpdateRequiredException(
+    super.message, {
+    super.localizedMessages,
+  });
+}
+
+class AuthVersionResolutionException extends AuthServiceException {
+  AuthVersionResolutionException(super.message);
 }

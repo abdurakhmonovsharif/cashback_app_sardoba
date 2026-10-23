@@ -5,6 +5,7 @@ import '../../app_language.dart';
 import '../../app_localizations.dart';
 import '../../components/inline_price_text.dart';
 import '../../constants.dart';
+import '../../utils/responsive_layout.dart';
 import '../../models/branch.dart';
 import '../../models/catalog.dart';
 import '../../services/branch_state.dart';
@@ -175,12 +176,21 @@ class _CatalogProductDetailsScreenState
             )),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: ResponsiveViewport(
+          child: SafeArea(
         top: false,
+        bottom: false,
         child: SingleChildScrollView(
           key: const ValueKey('product-detail-scroll'),
-          padding: const EdgeInsets.fromLTRB(defaultPadding, AppSpacing.related,
-              defaultPadding, defaultPadding + AppSpacing.related),
+          // Keep the viewport edge-to-edge; inset only the end of its content.
+          padding: EdgeInsets.fromLTRB(
+            defaultPadding,
+            AppSpacing.related,
+            defaultPadding,
+            defaultPadding +
+                AppSpacing.related +
+                MediaQuery.paddingOf(context).bottom,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -279,7 +289,7 @@ class _CatalogProductDetailsScreenState
             ],
           ),
         ),
-      ),
+      )),
     );
   }
 }

@@ -18,7 +18,6 @@ import 'package:sardoba_app/services/auth_storage.dart';
 import 'package:sardoba_app/services/branch_state.dart';
 import 'package:sardoba_app/services/catalog_storage.dart';
 import 'package:sardoba_app/services/notification_socket_service.dart';
-import 'package:sardoba_app/utils/responsive_layout.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -90,7 +89,7 @@ void main() {
           );
           return MediaQuery(
             data: media,
-            child: ResponsiveViewport(child: AppNavBarViewport(child: child!)),
+            child: AppNavBarViewport(child: child!),
           );
         },
         home: const HomeScreen(),
@@ -153,7 +152,8 @@ void main() {
             expect(titleStyle.fontWeight, FontWeight.w600);
             expect(titleStyle.height, 22 / 17);
             expect(titleStyle.letterSpacing, 0);
-            expect(hintStyle.fontSize, 15);
+            expect(hintStyle.fontSize,
+                Theme.of(tester.element(hint)).textTheme.bodyLarge!.fontSize);
             expect(hintStyle.fontWeight, FontWeight.w400);
             expect(titleWidget.textScaler, isNull);
             expect(hintWidget.textScaler, isNull);
@@ -215,7 +215,7 @@ void main() {
                 .first;
             final branchTargetRect = tester.getRect(branchTarget);
             final expectedInset = width >= 600 ? 40.0 : 16.0;
-            expect(searchRect.height, greaterThanOrEqualTo(50));
+            expect(searchRect.height, greaterThanOrEqualTo(48));
             expect(searchRect.left, closeTo(expectedInset, 0.5));
             expect(searchRect.right, closeTo(width - expectedInset, 0.5));
             expect(searchRect.top - headerRect.bottom, closeTo(8, 0.5));

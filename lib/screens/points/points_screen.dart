@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_language.dart';
 import '../../app_localizations.dart';
 import '../../constants.dart';
+import '../../utils/responsive_layout.dart';
 import '../../models/account.dart';
 import '../../models/points_entry.dart';
 import '../../models/points_transaction_page.dart';
@@ -214,7 +215,14 @@ class _PointsScreenState extends State<PointsScreen> {
       if (await AuthSessionGuard.instance.logoutIfTokensMissing()) {
         return null;
       }
-      final refreshed = await _storage.refreshTokens();
+      late final bool refreshed;
+      try {
+        refreshed = await _storage.refreshTokens();
+      } on AuthUpdateRequiredException {
+        return null;
+      } on AuthVersionResolutionException catch (error) {
+        throw PointsServiceException(error.message);
+      }
       if (!refreshed) {
         await AppNavigator.forceLogout();
         return null;
@@ -268,7 +276,14 @@ class _PointsScreenState extends State<PointsScreen> {
       if (await AuthSessionGuard.instance.logoutIfTokensMissing()) {
         throw const PointsUnauthorizedException('Unauthorized');
       }
-      final refreshed = await _storage.refreshTokens();
+      late final bool refreshed;
+      try {
+        refreshed = await _storage.refreshTokens();
+      } on AuthUpdateRequiredException {
+        throw const PointsServiceException('App update required.');
+      } on AuthVersionResolutionException catch (error) {
+        throw PointsServiceException(error.message);
+      }
       if (!refreshed) {
         await AppNavigator.forceLogout();
         throw const PointsUnauthorizedException('Unauthorized');
@@ -538,7 +553,8 @@ class _PointsScreenState extends State<PointsScreen> {
         title: Text(l10n.pointsScreenTitle),
         centerTitle: true,
       ),
-      body: SafeArea(top: false, bottom: false, child: body),
+      body: ResponsiveViewport(
+          child: SafeArea(top: false, bottom: false, child: body)),
     );
   }
 

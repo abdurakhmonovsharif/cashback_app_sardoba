@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_localizations.dart';
+import '../../../components/app_input_decoration.dart';
 import '../../../components/buttons/primary_button.dart';
+import '../../../components/profile_dob_picker.dart';
 import '../../../components/uzbek_phone_input.dart';
 import '../../../constants.dart';
 import '../../../entry_point.dart';
 import '../../../services/auth_storage.dart';
 import '../../../services/auth_service.dart';
 import '../../../utils/snackbar_utils.dart';
+import '../../../utils/date_input_formatter.dart';
 import '../../phoneLogin/number_verify_screen.dart';
 
 class SignUpForm extends StatefulWidget {
@@ -26,6 +29,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _dobController = TextEditingController();
   DateTime? _selectedDob;
   String? _dobError;
 
@@ -47,6 +51,7 @@ class _SignUpFormState extends State<SignUpForm> {
     _phoneController.removeListener(_handlePhoneChanged);
     _nameController.dispose();
     _phoneController.dispose();
+    _dobController.dispose();
     super.dispose();
   }
 
@@ -55,15 +60,19 @@ class _SignUpFormState extends State<SignUpForm> {
     final now = DateTime.now();
     final approx = DateTime(now.year - 18, now.month, now.day);
     final cutoff = _ageCutoff();
-    final baseInitial = _selectedDob ??
-        (approx.isBefore(DateTime(1900)) ? DateTime(1900) : approx);
-    final initial = baseInitial.isAfter(cutoff) ? cutoff : baseInitial;
-    final picked = await showDatePicker(
+    final firstDate = DateTime(1900);
+    final baseInitial = _selectedDob ?? approx;
+    final initial = baseInitial.isBefore(firstDate)
+        ? firstDate
+        : baseInitial.isAfter(cutoff)
+            ? cutoff
+            : baseInitial;
+    final picked = await showProfileDobPicker(
       context: context,
-      initialDate: initial.isAfter(now) ? now : initial,
-      firstDate: DateTime(1900),
+      l10n: l10n,
+      initialDate: initial,
+      firstDate: firstDate,
       lastDate: cutoff,
-      helpText: l10n.authDobLabel,
     );
     if (picked != null) {
       if (_isUnderMinimumAge(picked)) {
@@ -76,8 +85,17 @@ class _SignUpFormState extends State<SignUpForm> {
       setState(() {
         _selectedDob = picked;
         _dobError = null;
+        _dobController.text = formatDateOfBirth(picked);
       });
     }
+  }
+
+  void _handleDobChanged(String value) {
+    final parsed = parseDateOfBirthInput(value);
+    setState(() {
+      _selectedDob = parsed;
+      _dobError = null;
+    });
   }
 
   void _handlePhoneChanged() {
@@ -95,25 +113,8 @@ class _SignUpFormState extends State<SignUpForm> {
     Widget? suffix,
     Widget? prefix,
   }) {
-    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: bodyTextColor, fontSize: 15),
-      filled: true,
-      fillColor: screenBackgroundColor,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      border: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Colors.transparent),
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Colors.transparent),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Color(0xFF8FD7B6), width: 1.2),
-      ),
       suffixIcon: suffix != null
           ? Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -259,15 +260,7 @@ class _SignUpFormState extends State<SignUpForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final labelStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: titleColor.withValues(alpha: 0.8),
-              fontWeight: FontWeight.w600,
-            ) ??
-        const TextStyle(
-          color: titleColor,
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        );
+    final labelStyle = AppInputDecoration.labelTextStyle(context);
 
     return Form(
       key: _formKey,
@@ -348,39 +341,22 @@ class _SignUpFormState extends State<SignUpForm> {
   }
 
   Widget _buildDobSelector(AppStrings l10n) {
-    final hasValue = _selectedDob != null;
-    final text =
-        hasValue ? l10n.formatDateDdMMyyyy(_selectedDob!) : l10n.authDobHint;
-    final borderColor =
-        _dobError != null ? Colors.redAccent : Colors.transparent;
-    final theme = Theme.of(context);
-    return GestureDetector(
-      onTap: _pickDob,
-      child: Container(
-        decoration: BoxDecoration(
-          color: screenBackgroundColor,
-          borderRadius: BorderRadius.circular(AppRadius.card),
-          border: Border.all(color: borderColor),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                text,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: hasValue ? titleColor : bodyTextColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 18,
-              color: (hasValue ? titleColor : bodyTextColor)
-                  .withValues(alpha: 0.8),
-            ),
-          ],
+    return TextField(
+      controller: _dobController,
+      keyboardType: TextInputType.number,
+      textInputAction: TextInputAction.next,
+      inputFormatters: const [DateInputFormatter()],
+      onChanged: _handleDobChanged,
+      decoration: InputDecoration(
+        hintText: l10n.authDobHint,
+        enabledBorder:
+            _dobError != null ? AppInputDecoration.errorBorder : null,
+        focusedBorder:
+            _dobError != null ? AppInputDecoration.focusedErrorBorder : null,
+        suffixIcon: IconButton(
+          tooltip: l10n.authDobLabel,
+          onPressed: _pickDob,
+          icon: const Icon(Icons.calendar_today_rounded, size: 18),
         ),
       ),
     );

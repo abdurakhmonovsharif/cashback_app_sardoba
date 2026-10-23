@@ -6,14 +6,16 @@ import 'package:dio/dio.dart';
 import '../config/app_config.dart';
 import '../models/points_history.dart';
 import '../models/points_transaction_page.dart';
+import 'app_api_client.dart';
 import 'auth_storage.dart';
 
 class PointsService {
   PointsService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio =
-            dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+  })  : _dio = AppApiClient.configure(
+          dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+        ),
         _ownsDio = dio == null;
 
   static const String _pointsPath = '/api/v1/cashback/user';

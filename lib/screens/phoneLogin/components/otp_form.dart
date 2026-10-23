@@ -130,7 +130,6 @@ class _OtpFormState extends State<OtpForm> {
   Widget _buildDigitField(int index) {
     final node = _nodes[index];
     final controller = _controllers[index];
-    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
 
     return Semantics(
       label:
@@ -155,28 +154,10 @@ class _OtpFormState extends State<OtpForm> {
                 color: titleColor,
                 fontWeight: FontWeight.w700,
               ),
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             contentPadding: EdgeInsets.zero,
             counterText: '',
-            errorStyle: TextStyle(height: 0),
-            filled: true,
-            fillColor: screenBackgroundColor,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide(color: appBorderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide(color: primaryColor, width: 1.5),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide(color: Colors.red),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: borderRadius,
-              borderSide: BorderSide(color: Colors.red, width: 1.5),
-            ),
+            errorStyle: const TextStyle(height: 0),
           ),
           controller: controller,
         ),

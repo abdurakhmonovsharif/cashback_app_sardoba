@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'components/app_input_decoration.dart';
 import 'constants.dart';
 
 ThemeData buildThemeData() {
@@ -15,30 +16,13 @@ ThemeData buildThemeData() {
       centerTitle: true,
       iconTheme: IconThemeData(color: Colors.black),
     ),
-    inputDecorationTheme: inputDecorationTheme,
+    inputDecorationTheme: AppInputDecoration.theme,
     buttonTheme: buttonThemeData,
     visualDensity: VisualDensity.adaptivePlatformDensity,
   );
 }
 
-final InputDecorationTheme inputDecorationTheme = InputDecorationTheme(
-  fillColor: inputColor,
-  filled: true,
-  // hintStyle: Theme.of(context).textTheme.bodyMedium,
-  contentPadding: const EdgeInsets.all(defaultPadding),
-  border: kDefaultOutlineInputBorder,
-  enabledBorder: kDefaultOutlineInputBorder,
-  focusedBorder: kDefaultOutlineInputBorder.copyWith(
-      borderSide: BorderSide(
-    color: primaryColor.withValues(alpha: 0.5),
-  )),
-  errorBorder: kDefaultOutlineInputBorder.copyWith(
-    borderSide: kErrorBorderSide,
-  ),
-  focusedErrorBorder: kDefaultOutlineInputBorder.copyWith(
-    borderSide: kErrorBorderSide,
-  ),
-);
+final InputDecorationTheme inputDecorationTheme = AppInputDecoration.theme;
 
 const ButtonThemeData buttonThemeData = ButtonThemeData(
   shape: RoundedRectangleBorder(

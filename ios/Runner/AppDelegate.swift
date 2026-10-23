@@ -33,6 +33,86 @@
 
         func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
             GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+            guard let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "SardobaAppUpdate") else {
+                return
+            }
+            let channel = FlutterMethodChannel(
+                name: "com.sardoba/app_update",
+                binaryMessenger: registrar.messenger()
+            )
+            channel.setMethodCallHandler { [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) in
+                switch call.method {
+                case "getAppInfo":
+                    guard let rawVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
+                        result(FlutterError(
+                            code: "APP_VERSION_UNAVAILABLE",
+                            message: "Installed app version is unavailable",
+                            details: nil
+                        ))
+                        return
+                    }
+                    let version = rawVersion.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !version.isEmpty else {
+                        result(FlutterError(
+                            code: "APP_VERSION_UNAVAILABLE",
+                            message: "Installed app version is unavailable",
+                            details: nil
+                        ))
+                        return
+                    }
+                    result(["version": version, "platform": "ios"])
+                case "checkForUpdate":
+                    self?.checkAppStoreVersion(result: result)
+                default:
+                    result(FlutterMethodNotImplemented)
+                }
+            }
+        }
+
+        private func checkAppStoreVersion(result: @escaping FlutterResult) {
+            var components = URLComponents(string: "https://itunes.apple.com/lookup")!
+            components.queryItems = [
+                URLQueryItem(name: "id", value: "6757268380"),
+                URLQueryItem(name: "country", value: "uz")
+            ]
+            guard let url = components.url else {
+                result(["updateAvailable": false])
+                return
+            }
+
+            var request = URLRequest(url: url)
+            request.timeoutInterval = 5
+            URLSession.shared.dataTask(with: request) { data, response, error in
+                guard error == nil,
+                      let http = response as? HTTPURLResponse,
+                      (200..<300).contains(http.statusCode),
+                      let data,
+                      let payload = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                      let results = payload["results"] as? [[String: Any]],
+                      let app = results.first,
+                      let latestVersion = app["version"] as? String,
+                      let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+                else {
+                    DispatchQueue.main.async { result(["updateAvailable": false]) }
+                    return
+                }
+
+                let updateAvailable = Self.compareVersions(latestVersion, currentVersion) > 0
+                DispatchQueue.main.async {
+                    result(["updateAvailable": updateAvailable, "latestVersion": latestVersion])
+                }
+            }.resume()
+        }
+
+        private static func compareVersions(_ lhs: String, _ rhs: String) -> Int {
+            let left = lhs.split(separator: ".").map { Int($0) ?? 0 }
+            let right = rhs.split(separator: ".").map { Int($0) ?? 0 }
+            for index in 0..<max(left.count, right.count) {
+                let leftPart = index < left.count ? left[index] : 0
+                let rightPart = index < right.count ? right[index] : 0
+                if leftPart != rightPart { return leftPart < rightPart ? -1 : 1 }
+            }
+            return 0
         }
 
         // 🔥 iOS foreground banner & sound ko‘rsatish

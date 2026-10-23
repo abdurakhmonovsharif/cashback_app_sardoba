@@ -18,6 +18,10 @@ abstract final class AppBrandColors {
   static const deepGreenShade = Color(0xFF064E3B);
 }
 
+abstract final class AppActionColors {
+  static const destructive = Color(0xFFB3261E);
+}
+
 /// Shared shape scale: inset controls, content cards, and large panels.
 abstract final class AppRadius {
   static const double control = 16;

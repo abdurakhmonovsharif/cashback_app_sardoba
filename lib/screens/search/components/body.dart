@@ -101,11 +101,9 @@ class _BodyState extends State<Body> {
           } else {}
         },
         validator: requiredValidator.call,
-        style: Theme.of(context).textTheme.labelLarge,
         textInputAction: TextInputAction.search,
         decoration: InputDecoration(
           hintText: "Search on foodly",
-          contentPadding: kTextFieldPadding,
           prefixIcon: Padding(
             padding: const EdgeInsets.all(8.0),
             child: SvgPicture.asset(

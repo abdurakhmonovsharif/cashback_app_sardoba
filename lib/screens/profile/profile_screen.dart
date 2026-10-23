@@ -9,9 +9,11 @@ import '../../app_language.dart';
 import '../../app_localizations.dart';
 import '../../components/points_balance_card.dart';
 import '../../constants.dart';
+import '../../utils/responsive_layout.dart';
 import '../../entry_point.dart';
 import '../../models/account.dart';
 import '../../navigation/app_navigator.dart';
+import '../../services/app_update_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/auth_storage.dart';
 import '../../services/session_sync_service.dart';
@@ -48,7 +50,7 @@ class ProfileScreen extends StatelessWidget {
               ),
         ),
       ),
-      body: const _ProfileBody(),
+      body: const ResponsiveViewport(child: _ProfileBody()),
     );
   }
 }
@@ -398,9 +400,44 @@ class _ProfileBodyState extends State<_ProfileBody> {
                     const SizedBox(height: 24),
                     _LogoutAction(onTap: _confirmLogout),
                   ],
+                  const _AppVersionFooter(),
                 ],
               ),
             ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AppVersionFooter extends StatefulWidget {
+  const _AppVersionFooter();
+
+  @override
+  State<_AppVersionFooter> createState() => _AppVersionFooterState();
+}
+
+class _AppVersionFooterState extends State<_AppVersionFooter> {
+  late final Future<InstalledAppInfo> _appInfo =
+      AppUpdateService.installedAppInfo();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<InstalledAppInfo>(
+      future: _appInfo,
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        if (info == null) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 24),
+          child: Text(
+            'Sardoba · ${AppLocalizations.of(context).profileAppVersion(info.version)}',
+            key: const ValueKey('profile-app-version'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: bodyTextColor,
+                ),
           ),
         );
       },

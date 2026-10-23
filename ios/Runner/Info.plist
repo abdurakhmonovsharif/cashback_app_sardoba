@@ -47,12 +47,6 @@
 	<string>Kamera orqali profil rasmini yuklash uchun ruxsat kerak.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs access to local network</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Eng yaqin filialni topish uchun joylashuvingizga ruxsat bering. Разрешите доступ к
-			вашей геолокации, чтобы найти ближайший филиал.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Eng yaqin filialni topish uchun joylashuvingizga ruxsat bering. Разрешите доступ к
-			вашей геолокации, чтобы найти ближайший филиал.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Rasmni saqlash uchun ruxsat kerak.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

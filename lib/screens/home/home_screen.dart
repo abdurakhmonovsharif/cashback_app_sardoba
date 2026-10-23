@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../app_language.dart';
 import '../../app_localizations.dart';
+import '../../components/app_input_decoration.dart';
 import '../../constants.dart';
+import '../../utils/responsive_layout.dart';
 import '../../models/account.dart';
 import '../../models/branch.dart';
 import '../../models/catalog.dart';
@@ -44,7 +46,6 @@ const Color _kHomeAccentGreen = Color(0xFF0F8F4D);
 // const Color _kHomeAccentOrange = Color(0xFFF59E0B); // Fulfillment only.
 const Color _kHomeBorder = appBorderColor;
 const Color _kHomeTextPrimary = Color(0xFF111827);
-const Color _kHomeTextSecondary = Color(0xFF6B7280);
 
 class _HomeBreakpoints {
   static const compact = 360.0;
@@ -119,7 +120,8 @@ class _HomeScreenState extends State<HomeScreen> {
         navAwareBottomPadding(context, extra: 16);
 
     return Scaffold(
-      body: SafeArea(
+      body: ResponsiveViewport(
+          child: SafeArea(
         top: true,
         bottom: false,
         child: RefreshIndicator(
@@ -177,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-      ),
+      )),
     );
   }
 }
@@ -493,24 +495,24 @@ class _HomeSearchBar extends StatelessWidget {
 
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppInputDecoration.borderRadius,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppInputDecoration.borderRadius,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 50),
+          constraints: const BoxConstraints(minHeight: 48),
           child: Ink(
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: _kHomeBorder),
+              borderRadius: AppInputDecoration.borderRadius,
+              border: Border.all(color: appBorderColor),
             ),
             child: Row(
               children: [
                 const SizedBox(width: 16),
                 const Icon(
                   Icons.search_rounded,
-                  color: _kHomeTextSecondary,
+                  color: bodyTextColor,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -519,12 +521,10 @@ class _HomeSearchBar extends StatelessWidget {
                     hint,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _kHomeTextSecondary,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w400,
-                      letterSpacing: 0,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ) ??
+                        TextStyle(color: theme.colorScheme.onSurfaceVariant),
                   ),
                 ),
                 const SizedBox(width: 16),

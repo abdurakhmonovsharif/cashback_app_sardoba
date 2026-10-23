@@ -14,6 +14,8 @@ import '../config/app_config.dart';
 import '../navigation/app_navigator.dart';
 import '../models/app_notification.dart';
 import 'auth_storage.dart';
+import 'app_api_client.dart';
+import 'auth_service.dart';
 import 'push_notification_service.dart';
 import 'session_sync_service.dart';
 
@@ -30,7 +32,8 @@ class NotificationSocketManager {
   final ValueNotifier<SocketConnectionState> connectionState =
       ValueNotifier<SocketConnectionState>(SocketConnectionState.disconnected);
 
-  final Dio _dio = Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl));
+  final Dio _dio =
+      AppApiClient.configure(Dio(BaseOptions(baseUrl: AppConfig.apiBaseUrl)));
 
   WebSocketChannel? _channel;
   StreamSubscription? _channelSubscription;
@@ -232,7 +235,16 @@ class NotificationSocketManager {
   }
 
   Future<void> _doRefresh() async {
-    final refreshed = await _storage.refreshTokens();
+    late final bool refreshed;
+    try {
+      refreshed = await _storage.refreshTokens();
+    } on AuthUpdateRequiredException {
+      await _stopForRequiredUpdate();
+      return;
+    } on AuthVersionResolutionException {
+      await _stopForRequiredUpdate();
+      return;
+    }
     _isRefreshingTokens = false;
     if (refreshed) {
       if (!_shouldReconnect) {
@@ -444,7 +456,16 @@ class NotificationSocketManager {
       return true;
     } on DioException catch (error) {
       if (retry && _isDioAuthFailure(error)) {
-        final refreshed = await _storage.refreshTokens();
+        late final bool refreshed;
+        try {
+          refreshed = await _storage.refreshTokens();
+        } on AuthUpdateRequiredException {
+          await _stopForRequiredUpdate();
+          return false;
+        } on AuthVersionResolutionException {
+          await _stopForRequiredUpdate();
+          return false;
+        }
         if (!refreshed) {
           await AppNavigator.forceLogout();
           return false;
@@ -459,6 +480,14 @@ class NotificationSocketManager {
       debugPrint('⚠️ Notification registration failed: $error');
       return false;
     }
+  }
+
+  Future<void> _stopForRequiredUpdate() async {
+    _isRefreshingTokens = false;
+    _shouldReconnect = false;
+    _reconnectTimer?.cancel();
+    connectionState.value = SocketConnectionState.disconnected;
+    await _disposeChannel();
   }
 
   bool _isDioAuthFailure(DioException error) {

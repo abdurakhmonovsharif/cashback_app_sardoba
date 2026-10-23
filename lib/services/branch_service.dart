@@ -4,13 +4,16 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../models/branch.dart';
+import 'app_api_client.dart';
 
 class BranchService {
   BranchService({
     Dio? dio,
     String? baseUrl,
     String? branchesPath,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+  })  : _dio = AppApiClient.configure(
+          dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+        ),
         _ownsDio = dio == null,
         _baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _branchesPath = branchesPath ?? _defaultBranchesPath;
@@ -87,8 +90,9 @@ class BranchService {
   }
 
   Uri _buildUri(String path, Map<String, String>? queryParameters) {
-    final normalizedBase =
-        _baseUrl.endsWith('/') ? _baseUrl.substring(0, _baseUrl.length - 1) : _baseUrl;
+    final normalizedBase = _baseUrl.endsWith('/')
+        ? _baseUrl.substring(0, _baseUrl.length - 1)
+        : _baseUrl;
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     final uri = Uri.parse('$normalizedBase$normalizedPath');
 

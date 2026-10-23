@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app_language.dart';
 import '../../app_localizations.dart';
 import '../../constants.dart';
+import '../../utils/responsive_layout.dart';
 import '../../components/branch_picker_sheet.dart';
 import '../../components/inline_price_text.dart';
 import '../../models/branch.dart';
@@ -284,7 +285,8 @@ class _CatalogScreenState extends State<CatalogScreen> {
 
     return Scaffold(
       backgroundColor: screenBackgroundColor,
-      body: SafeArea(
+      body: ResponsiveViewport(
+          child: SafeArea(
         top: true,
         bottom: false,
         child: RefreshIndicator(
@@ -304,7 +306,7 @@ class _CatalogScreenState extends State<CatalogScreen> {
             children: children,
           ),
         ),
-      ),
+      )),
     );
   }
 }

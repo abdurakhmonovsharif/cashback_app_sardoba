@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../app_localizations.dart';
+import '../../../components/app_input_decoration.dart';
 import '../../../components/buttons/primary_button.dart';
 import '../../../components/uzbek_phone_input.dart';
 import '../../../constants.dart';
@@ -57,25 +58,8 @@ class _SignInFormState extends State<SignInForm> {
     Widget? suffix,
     Widget? prefix,
   }) {
-    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: bodyTextColor, fontSize: 15),
-      filled: true,
-      fillColor: screenBackgroundColor,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      border: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Colors.transparent),
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Colors.transparent),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Color(0xFF8FD7B6), width: 1.2),
-      ),
       suffixIcon: suffix != null
           ? Padding(
               padding: const EdgeInsets.only(right: 12),
@@ -91,15 +75,7 @@ class _SignInFormState extends State<SignInForm> {
   Widget _buildLabel(BuildContext context, String text) {
     return Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: titleColor.withValues(alpha: 0.8),
-                fontWeight: FontWeight.w600,
-              ) ??
-          const TextStyle(
-            color: titleColor,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
+      style: AppInputDecoration.labelTextStyle(context),
     );
   }
 

@@ -52,7 +52,14 @@ class SessionSyncService {
       if (await _guard.logoutIfTokensMissing()) {
         return null;
       }
-      final refreshed = await _storage.refreshTokens();
+      late final bool refreshed;
+      try {
+        refreshed = await _storage.refreshTokens();
+      } on AuthUpdateRequiredException {
+        return null;
+      } on AuthVersionResolutionException {
+        return null;
+      }
       if (!refreshed) {
         await AppNavigator.forceLogout();
         return null;

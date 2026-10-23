@@ -4,13 +4,16 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../models/catalog.dart';
+import 'app_api_client.dart';
 
 class CatalogService {
   CatalogService({
     Dio? dio,
     String? baseUrl,
     String? catalogPath,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+  })  : _dio = AppApiClient.configure(
+          dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+        ),
         _ownsDio = dio == null,
         _catalogPath = catalogPath ?? _defaultCatalogPath;
 
@@ -54,7 +57,8 @@ class CatalogService {
           : (error.message ?? 'Request failed.');
       throw CatalogServiceException('Failed to load catalog. $details');
     } on FormatException catch (error) {
-      throw CatalogServiceException('Failed to parse catalog. ${error.message}');
+      throw CatalogServiceException(
+          'Failed to parse catalog. ${error.message}');
     }
   }
 

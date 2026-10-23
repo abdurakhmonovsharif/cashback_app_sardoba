@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Constrains very wide layouts (iPad/desktop) to a readable max width and
-/// adds gentle side padding while leaving phones unchanged.
+/// Constrains page content to a readable width while leaving phones unchanged.
+/// Use inside Scaffold.body, never around the root Navigator or Scaffold:
+/// route backgrounds and system bars must retain the full window bounds.
 class ResponsiveViewport extends StatelessWidget {
   const ResponsiveViewport({
     super.key,
@@ -38,9 +39,16 @@ class ResponsiveViewport extends StatelessWidget {
                 ? 24.0
                 : 0.0;
 
-        return Center(
+        return Align(
+          alignment: Alignment.topCenter,
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
+            constraints: BoxConstraints(
+              maxWidth: maxWidth,
+              // A short scrollable must still fill the Scaffold body rather
+              // than shrink and become vertically centered.
+              minHeight:
+                  constraints.hasBoundedHeight ? constraints.maxHeight : 0,
+            ),
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
               child: child ?? const SizedBox.shrink(),

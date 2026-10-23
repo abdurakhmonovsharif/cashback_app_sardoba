@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../components/app_input_decoration.dart';
 import '../../constants.dart';
 import '../../models/saved_location.dart';
 import '../../services/saved_locations_service.dart';
@@ -71,7 +72,8 @@ class _SavedLocationsScreenState extends State<SavedLocationsScreen> {
               ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                style: TextButton.styleFrom(foregroundColor: const Color(0xFFED5A5A)),
+                style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFFED5A5A)),
                 child: const Text('Delete'),
               ),
             ],
@@ -412,7 +414,7 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildLabel(theme, 'Label'),
+                  _buildLabel('Label'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _labelController,
@@ -426,7 +428,7 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
                     },
                   ),
                   const SizedBox(height: 18),
-                  _buildLabel(theme, 'Address'),
+                  _buildLabel('Address'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _addressController,
@@ -440,7 +442,7 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
                     },
                   ),
                   const SizedBox(height: 18),
-                  _buildLabel(theme, 'Additional details'),
+                  _buildLabel('Additional details'),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _detailsController,
@@ -448,7 +450,7 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
                     decoration: _fieldDecoration('Entrance, floor or notes'),
                   ),
                   const SizedBox(height: 18),
-                  _buildLabel(theme, 'Location type'),
+                  _buildLabel('Location type'),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<SavedLocationType>(
                     initialValue: _type,
@@ -507,26 +509,16 @@ class _SavedLocationFormScreenState extends State<SavedLocationFormScreen> {
     );
   }
 
-  Widget _buildLabel(ThemeData theme, String label) {
+  Widget _buildLabel(String label) {
     return Text(
       label,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: titleColor,
-        fontWeight: FontWeight.w600,
-      ),
+      style: AppInputDecoration.labelTextStyle(context),
     );
   }
 
   InputDecoration _fieldDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
-      filled: true,
-      fillColor: const Color(0xFFF6F8FC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(18),
-        borderSide: BorderSide.none,
-      ),
     );
   }
 }

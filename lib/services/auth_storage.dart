@@ -122,6 +122,10 @@ class AuthStorage {
         tokenType: tokens.tokenType,
       );
       return true;
+    } on AuthUpdateRequiredException {
+      rethrow;
+    } on AuthVersionResolutionException {
+      rethrow;
     } on AuthUnauthorizedException {
       await logout();
       return false;

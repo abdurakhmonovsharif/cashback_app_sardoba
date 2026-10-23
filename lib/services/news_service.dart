@@ -4,12 +4,15 @@ import 'package:dio/dio.dart';
 
 import '../config/app_config.dart';
 import '../models/news.dart';
+import 'app_api_client.dart';
 
 class NewsService {
   NewsService({
     Dio? dio,
     String? baseUrl,
-  })  : _dio = dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+  })  : _dio = AppApiClient.configure(
+          dio ?? Dio(BaseOptions(baseUrl: baseUrl ?? AppConfig.apiBaseUrl)),
+        ),
         _ownsDio = dio == null;
 
   static const String _newsPath = '/api/v1/news';

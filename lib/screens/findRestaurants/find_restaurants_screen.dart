@@ -18,13 +18,8 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
   final TextEditingController _addressController = TextEditingController();
 
   InputDecoration _buildInputDecoration(String hint, {Widget? prefix}) {
-    const borderRadius = BorderRadius.all(Radius.circular(AppRadius.card));
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFFB0B6C3), fontSize: 15),
-      filled: true,
-      fillColor: const Color(0xFFF6F8FC),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       prefixIcon: prefix != null
           ? Padding(
               padding: const EdgeInsets.only(left: 16, right: 12),
@@ -34,18 +29,6 @@ class _FindRestaurantsScreenState extends State<FindRestaurantsScreen> {
       prefixIconConstraints: prefix != null
           ? const BoxConstraints(minHeight: 24, minWidth: 24)
           : null,
-      border: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Colors.transparent),
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Colors.transparent),
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: borderRadius,
-        borderSide: BorderSide(color: Color(0xFF8FD7B6), width: 1.2),
-      ),
     );
   }
 
