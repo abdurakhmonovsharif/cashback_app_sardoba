@@ -1,160 +1,133 @@
-# Sardoba Points & Catalog App UI Kit
+# Sardoba
 
-Sardoba is a Flutter UI starter for restaurant brands who want to launch a
-branch-based loyalty and catalog experience fast. The kit ships with branch
-catalogs, promotions, QR identification, and a points balance/history flow
-that keeps guests engaged without handling payments inside the app.
+Sardoba is a Flutter mobile app for restaurant customers. It lets customers browse the restaurant catalog, find locations, track loyalty points and transaction history, and use QR-based loyalty features.
 
-## Highlights
+[![App Store](https://img.shields.io/badge/App%20Store-iOS-111111?logo=apple)](https://apps.apple.com/uz/app/sardoba/id6757268380)
+[![Google Play](https://img.shields.io/badge/Google%20Play-Android-414141?logo=googleplay)](https://play.google.com/store/apps/details?id=com.sardobabukhara.app&hl=en)
 
-- Branch directory with location details powered by Yandex MapKit
-- Catalog layouts scoped per branch, including rich imagery and availability states
-- Points wallet module for tracking balances and history
-- Campaign banners and promo callouts that surface timely offers
-- Skeleton loading states, light/dark theming, and localization scaffolding
-- Fully responsive Flutter UI components for Android and iOS
+## Features
 
-## Tech Stack
+- Browse, search, and filter the restaurant and product catalog.
+- Find restaurant locations and view them on a map.
+- Sign in with a phone number and SMS verification code.
+- Use QR-based loyalty features.
+- View points balance, loyalty level, and transaction history.
+- Receive news and notifications.
+- Manage profile details, PIN, saved locations, and notification preferences.
+- Use the app in Uzbek or Russian.
 
-- Flutter 3.5+ and Dart 3
-- `flutter_svg` for vector assets and iconography
-- `shared_preferences` for local caching and session state
-- `yandex_mapkit` for map views and branch positioning
-- `form_field_validator`, `crypto`, `url_launcher`, and dart-define driven configs
+## Tech stack
 
-## Project Structure
+- Flutter and Dart 3 (the `pubspec.yaml` SDK constraint is `>=3.5.0 <4.0.0`).
+- Dio for REST API requests and WebSocket for real-time notifications.
+- Yandex MapKit for restaurant locations.
+- `shared_preferences` for local preferences and session data.
+- Flutter Local Notifications, `image_picker`, `url_launcher`, and `cached_network_image`.
 
-- `lib/screens` – page layouts such as branch lists, catalogs, auth, and loyalty
-- `lib/components` – reusable widgets (cards, headers, progress indicators)
-- `lib/models` – data models for branches, catalog items, and loyalty balances
-- `lib/services` – integrations and helpers (API, storage, localization)
-- `assets/` – illustrations, icons, and branding resources bundled in the app
+## Getting started
 
-## Getting Started
+### Requirements
 
-1. Install Flutter 3.5 or newer and the associated platform toolchains.
-2. Clone the repository and fetch packages:
-   ```bash
-   flutter pub get
-   ```
-3. Provide runtime config via `--dart-define` flags for API endpoint and Yandex
-   MapKit key (see Environment reference).
-4. Launch the app:
-   ```bash
-   flutter run
-   ```
+- Flutter SDK (which includes the Dart SDK).
+- Android Studio and Android SDK for Android builds.
+- macOS and Xcode for iOS builds.
+- Access to an API server. A platform-specific Yandex MapKit API key is also needed to display maps on Android and iOS.
 
-### Environment reference
+### Install packages
 
-| Key                     | Description                                                               |
-| ----------------------- | ------------------------------------------------------------------------- |
-| `API_BASE_URL`          | Base URL for all REST services (Auth, Catalog, Points, etc).              |
-| `YANDEX_MAPKIT_API_KEY` | Native Yandex MapKit SDK key used by both Android and iOS bootstrap code. |
+From the repository root, run:
 
-### Example run/build with dart-define
+```bash
+flutter pub get
+```
+
+### Run the app
+
+If `API_BASE_URL` is not set, the app uses `https://api.sardobacashback.uz`. To use another server, such as a local or staging environment, pass its URL with `--dart-define`:
 
 ```bash
 flutter run \
-  --dart-define=API_BASE_URL=https://api.example.com \
-  --dart-define=YANDEX_MAPKIT_API_KEY=<your-key>
+  --dart-define=API_BASE_URL=https://api.example.com
 ```
+
+Replace `https://api.example.com` with a reachable API URL. On an emulator, `localhost` refers to the emulator itself; use an address that can reach the server running on your computer.
+
+### Configure Yandex MapKit
+
+Set a Yandex MapKit API key for each native platform:
+
+- Android: the `yandex_mapkit_api_key` value in `android/app/src/main/res/values/strings.xml`.
+- iOS: the `configureYandexMapKit()` configuration in `ios/Runner/AppDelegate.swift`.
+
+Obtain platform-appropriate keys from your Yandex Developer account. Review your project and Yandex account restrictions before committing keys to a public repository. `YANDEX_MAPKIT_API_KEY` changes the Dart `AppConfig` value; it does not replace the native Android or iOS SDK keys.
+
+## Build
+
+### Android APK
+
+```bash
+flutter build apk --release \
+  --dart-define=API_BASE_URL=https://api.example.com
+```
+
+### Android App Bundle
 
 ```bash
 flutter build appbundle --release \
-  --dart-define=API_BASE_URL=https://api.example.com \
-  --dart-define=YANDEX_MAPKIT_API_KEY=<your-key>
+  --dart-define=API_BASE_URL=https://api.example.com
 ```
 
-Run `flutter test` to execute widget or unit tests located in the `test/`
-directory.
+For Google Play releases, configure Android release signing with `android/key.properties` and a release keystore. Do not commit signing files or credentials to Git.
 
-## WebSocket-driven notifications
+### iOS
 
-The app now relies on a WebSocket+local-notification stack (see
-`lib/services/notification_socket_service.dart`). The flow works as follows:
-
-1. **Register the device** – After OTP verification, the client calls
-   `POST /api/v1/notifications/register-token` with `deviceType` (`android` or
-   `ios`), `deviceToken: null`, the current language (`AppLanguage`), and
-   `usesWebSocket: true` so the backend remembers that this device expects real-
-   time pushes instead of FCM.
-2. **Open the WebSocket** – The same moment the device registers, the manager
-   connects to `wss://<your-api>/api/v1/notifications/ws` (constructed from
-   `API_BASE_URL`) and sends the `Authorization: Bearer <access_token>` header.
-   Successful connections trigger the server to replay any missed notifications.
-3. **Show real-time alerts** – Incoming JSON blobs must include
-   `notification_id`, `title`, and `description` (optional `created_at`). They
-   are turned into `AppNotification` instances, streamed for UI listeners, and
-   displayed as banners via `PushNotificationManager.instance.showNotification`.
-4. **Reconnect automatically** – If the socket drops, the manager retries with
-   exponential backoff (2s, 4s, 8s, …) capped at 60s. Each successful
-   reconnection asks the server to resend unsent events.
-5. **Logout cleanup** – When the user logs out (`AppNavigator.forceLogout` or
-   manual session reset), the socket closes and reconnect attempts stop until the
-   next login.
-6. **Fetch historic notifications** – The existing
-   `NotificationService.fetchNotifications()` (`GET /api/v1/notifications/me`)
-   still provides the history that powers the “Bell” screen (`lib/screens/notifications/notifications_screen.dart`).
-
-## Points & loyalty data
-
-The app relies on the refreshed `/api/v1/cashback/user/{user_id}` payload
-(legacy endpoint naming) that includes both `loyalty` summary information and
-the `transactions` history needed to render the points cards, balances, and
-level progress indicators. The response looks like this:
-
-```json
-{
-	"loyalty": {
-		"level": "Gold",
-		"points_balance": 2700,
-		"points_total": 4200,
-		"current_level_points": 1300,
-		"current_level_min_points": 1000,
-		"current_level_max_points": 2000,
-		"next_level": "Platinum",
-		"next_level_required_points": 2000,
-		"points_to_next_level": 700,
-		"is_max_level": false,
-		"points_percent": 5,
-		"next_level_points_percent": 7
-	},
-	"transactions": [
-		{
-			"id": 1,
-			"user_id": 123,
-			"amount": 12000,
-			"balance_after": 1200,
-			"created_at": "2024-09-12T12:34:56Z",
-			"branch_id": 139235,
-			"source": "QR",
-			"staff_id": null
-		}
-	]
-}
+```bash
+flutter build ios --release \
+  --dart-define=API_BASE_URL=https://api.example.com
 ```
 
-`PointsService.fetchUserPoints` now returns that structure
-(see `lib/models/points_history.dart`), so the UI cards stay in sync with the
-backend-provided points balance, level progress, and history. The endpoints and
-schema are captured in the latest `openapi.json`.
+For an App Store build, configure the signing team and provisioning settings in Xcode.
 
-## Customization Tips
+## Checks
 
-- Update the color system and typography in `lib/theme.dart` to match branding.
-- Seed demo content and loyalty scenarios via `lib/demo_data.dart`.
-- Extend localization strings in `lib/app_localizations.dart` and regenerate
-  translations as needed.
+```bash
+flutter analyze
+flutter test
+```
 
-## Screenshots
+Widget and unit tests are located in the `test/` directory.
 
-Add your own mockups or device captures to the `assets/branding/` directory and
-reference them here once available.
+## Project structure
+
+```text
+lib/
+├── components/    # Reusable UI components
+├── config/        # API and app configuration
+├── models/        # API and screen data models
+├── navigation/    # Navigation and the main screen container
+├── screens/       # App screens
+├── services/      # API, session, catalog, points, and notification services
+├── app_language.dart
+├── app_localizations.dart
+└── main.dart
+
+assets/            # Images, icons, fonts, and branding
+android/           # Android native configuration
+ios/               # iOS native configuration
+test/              # Flutter tests
+```
+
+## API integration
+
+Authentication, catalog, locations, points, and news are handled by services in `lib/services/`. Notifications use a WebSocket for signed-in users, and notification history is also available in the app. The API base URL is read from `lib/config/app_config.dart`.
+
+API endpoints and payloads evolve alongside the backend. Refer to the backend project's OpenAPI documentation for the current API contract.
+
+## App version
+
+- The app version is managed by the `version` field in `pubspec.yaml`. The current value is `2.0.0+3`.
+- Use `--build-name` and `--build-number` to override the version and build number at build time.
 
 ## License
 
-Provide license details or usage terms here if you are distributing the kit
-beyond internal teams.
-
-# sardoba_points
-
+This repository does not include a license file. Contact the project owner to confirm the terms for using or distributing the code.
